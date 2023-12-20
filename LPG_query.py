@@ -7,7 +7,7 @@ import sys
 from generate_LPG_from_tables import generate_LPG_from_tables
 #############################################################################################
 #LPG dataframe properties:                                                                  #
-#('id' maps to the node id in LPG)                                                                                           #
+#('id' maps to the node id in LPG)                                                          #
 #pin_df: 'name', 'x', 'y', 'is_in_clk', 'is_port', 'is_start', 'is_end', 'dir',             #
 #        'maxcap', 'maxtran', 'num_reachable_endpoint', 'cellname', 'netname',              #
 #        'tran', 'slack', 'risearr', 'fallarr', 'cap', 'is_macro', 'is_seq',                #
