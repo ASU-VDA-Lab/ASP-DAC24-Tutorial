@@ -45,12 +45,10 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "ord/Tech.h"
-#include "sta/Corner.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingRole.hh"
 #include "utl/Logger.h"
 
 #include "sta/PatternMatch.hh"
+#include "sta/Corner.hh"
 
 namespace ord {
 
@@ -268,24 +266,24 @@ bool Design::isInClock(odb::dbInst* inst)
   return false;
 }
 
-std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
+std::string Design::getITermName(odb::dbITerm* ITerm)
 {
-  std::uint64_t route_length = 0;
-  if (net->getSigType().isSupply()) {
-    for (odb::dbSWire* swire : net->getSWires()) {
-      for (odb::dbSBox* wire : swire->getWires()) {
-        if (wire != nullptr && !(wire->isVia())) {
-          route_length += wire->getLength();
-        }
-      }
-    }
-  } else {
-    auto* wire = net->getWire();
-    if (wire != nullptr) {
-      route_length += wire->getLength();
+  auto MTerm_name = ITerm->getMTerm()->getName();
+  auto inst_name = ITerm->getInst()->getName();
+  return inst_name + "/" + MTerm_name;
+}
+
+bool Design::isInSupply(odb::dbITerm* iterm)
+{
+  auto* mTerm = iterm->getMTerm();
+  if (mTerm != nullptr) {
+    auto sig_type = mTerm->getSigType();
+    if (sig_type == odb::dbSigType::POWER
+        || sig_type == odb::dbSigType::GROUND) {
+      return true;
     }
   }
-  return route_length;
+  return false;
 }
 
 const sta::Pin* Design::getStaPin(const char* pattern)
@@ -310,15 +308,13 @@ float Design::LibertyPort_capacitance(sta::LibertyPort* lib_port, sta::Corner* c
 
 const sta::MinMax* Design::getStaMinMax(const std::string minmax)
 {
-  if(minmax == "max")
-  {
+  if(minmax == "max" || minmax == "Max" || minmax == "MAX") {
     return sta::MinMax::max();
   }
-  else
-  {
-    if(minmax == "min")
+  else {
+    if(minmax == "min" || minmax == "Min" || minmax == "MIN") {
       return sta::MinMax::min();
-
+    }
   }
 }
 
@@ -329,41 +325,24 @@ sta::LibertyPort* Design::Pin_liberty_port(sta::Pin* pin)
   return network->libertyPort(pin);
 }
 
-// I'd like to return a std::set but swig gave me way too much grief
-// so I just copy the set to a vector.
-std::vector<odb::dbMTerm*> Design::getTimingFanoutFrom(odb::dbMTerm* input)
+std::uint64_t Design::getNetRoutedLength(odb::dbNet* net)
 {
-  sta::dbSta* sta = getSta();
-  sta::dbNetwork* network = sta->getDbNetwork();
-
-  odb::dbMaster* master = input->getMaster();
-  sta::Cell* cell = network->dbToSta(master);
-  if (!cell) {
-    return {};
-  }
-
-  sta::LibertyCell* lib_cell = network->libertyCell(cell);
-  if (!lib_cell) {
-    return {};
-  }
-
-  sta::Port* port = network->dbToSta(input);
-  sta::LibertyPort* lib_port = network->libertyPort(port);
-
-  std::set<odb::dbMTerm*> outputs;
-  for (auto arc_set : lib_cell->timingArcSets(lib_port, /* to */ nullptr)) {
-    sta::TimingRole* role = arc_set->role();
-    if (role->isTimingCheck() || role->isAsyncTimingCheck()
-        || role->isNonSeqTimingCheck() || role->isDataCheck()) {
-      continue;
+  std::uint64_t route_length = 0;
+  if (net->getSigType().isSupply()) {
+    for (odb::dbSWire* swire : net->getSWires()) {
+      for (odb::dbSBox* wire : swire->getWires()) {
+        if (wire != nullptr && !(wire->isVia())) {
+          route_length += wire->getLength();
+        }
+      }
     }
-    sta::LibertyPort* to_port = arc_set->to();
-    odb::dbMTerm* to_mterm = master->findMTerm(to_port->name());
-    if (to_mterm) {
-      outputs.insert(to_mterm);
+  } else {
+    auto* wire = net->getWire();
+    if (wire != nullptr) {
+      route_length += wire->getLength();
     }
   }
-  return {outputs.begin(), outputs.end()};
+  return route_length;
 }
 
 grt::GlobalRouter* Design::getGlobalRouter()
