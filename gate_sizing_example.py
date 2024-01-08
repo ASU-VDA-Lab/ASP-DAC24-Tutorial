@@ -1,6 +1,7 @@
 import faulthandler
 faulthandler.enable()
 
+import os
 import torch
 import torch.optim as optim
 import numpy as np
@@ -24,6 +25,12 @@ from ASPDAC_helpers import update_lambda, optimize_model, select_action, get_sub
 from ASPDAC_helpers import get_critical_path_nodes, get_state, env_step, env_reset, calc_cost
 from ASPDAC_helpers import get_state_cells, pareto, rmdir, min_slack
 
+import argparse
+
+parser = argparse.ArgumentParser(description="path of your ASPDAC2024-Turotial clone (must include /ASPDAC2024-Turotial)")
+parser.add_argument("--path", type = str, default='./', action = 'store')
+pyargs = parser.parse_args()
+
 unit_micron = 2000
 
 
@@ -31,15 +38,12 @@ unit_micron = 2000
 is_ipython = 'inline' in matplotlib.get_backend()
 if is_ipython:
   from IPython import display
-#plt.ion()
 # if gpu is to be used
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#device = torch.device("cpu")
 print(device)
 
-
 #load cell dictionary with name and size properties
-with open('/home/bingyuew/ASPDAC2024-Tutorial/data/cell_dictionary_openroad_modified.json','r') as f:
+with open(pyargs.path + '/data/cell_dictionary_openroad_modified.json','r') as f:
   cell_dict = json.load(f)
 
 # create a lookup table for the index form the name
@@ -53,20 +57,16 @@ for k,v in cell_dict.items():
 
 #addby
 ord_tech = Tech()
-ord_tech_design = ord.Tech()
-ord_tech.readLiberty("/home/bingyuew/ASPDAC2024-Tutorial/data/NangateOpenCellLibrary_typical_para2.lib")
-ord_tech.readLef("/home/bingyuew/ASPDAC2024-Tutorial/data/NangateOpenCellLibrary.lef")
+ord_tech.readLiberty(pyargs.path + "/data/NangateOpenCellLibrary_typical_para2.lib")
+ord_tech.readLef(pyargs.path + "/data/NangateOpenCellLibrary.lef")
 ord_design = Design(ord_tech)
 timing = Timing(ord_design)
 
-directory = '/home/bingyuew/CircuitOps/designs/nangate45/'
-#project = 'opencores'
 #Semi optimized netlist
 design = 'pid'; CLKset = [0.6] ; semi_opt_clk = '0.65'; clock_name = "i_clk"
-#design = 'gcd'; CLKset = [0.6] ; semi_opt_clk = '0.65'; clock_name = "clk"
 CLK_DECAY=100; CLK_DECAY_STRT=25
 #addby
-ord_design.readVerilog("/home/bingyuew/ASPDAC2024-Tutorial/data/%s_%s.v" % (design, semi_opt_clk))
+ord_design.readVerilog(pyargs.path + "/data/%s_%s.v" % (design, semi_opt_clk))
 
 ord_design.link(design)
 # create clock and get operorad objects
@@ -74,17 +74,14 @@ clk_final = CLKset[0]
 clk_range = 0.98*(float(semi_opt_clk) - CLKset[0])
 clk_init = clk_final + clk_range
 
-#ord.create_clock("core_clk", [clock_name], clk_init*1e-9)#need_implement
 ord_design.evalTclString("create_clock [get_ports i_clk] -name core_clock -period " + str(clk_init*1e-9))
 db = ord.get_db()
 chip = db.getChip()
 #addby
 block = ord.get_db_block()
-#block = chip.getBlock()
 nets = block.getNets()
 
 # This must eventually be put into a create graph function.
-
 # source and destination instances for the graph function.
 srcs = []
 dsts = []
@@ -105,39 +102,16 @@ for net in nets:
   net_dsts = []
   # create/update the instance dictionary for each net.
   for s_iterm in iterms:
-    inst = s_iterm.getInst().getName()
-    term_name = s_iterm.getInst().getName() + "/" + s_iterm.getMTerm().getName()
-    cell_type = s_iterm.getInst().getMaster().getName()# This must eventually be put into a create graph function.
-
-# source and destination instances for the graph function.
-srcs = []
-dsts = []
-
-# Dictionary that stores all the properties of the instances.
-inst_dict = {}
-
-# dictionary that keeps a stores the fanin and fanout of the instances in an easily indexable way.
-fanin_dict = {}
-fanout_dict = {}
-
-# storing all the endpoints(here they are flipflops)
-endpoints = []
-
-for net in nets:
-  iterms = net.getITerms()
-  net_srcs = []
-  net_dsts = []
-  # create/update the instance dictionary for each net.
-  for s_iterm in iterms:
-    inst = s_iterm.getInst().getName()
+    inst = s_iterm.getInst()
+    inst_name = s_iterm.getInst().getName()
     term_name = s_iterm.getInst().getName() + "/" + s_iterm.getMTerm().getName()
     cell_type = s_iterm.getInst().getMaster().getName()
 
-    if inst not in inst_dict:
-      i_inst = block.findInst(inst)
+    if inst_name not in inst_dict:
+      i_inst = block.findInst(inst_name)
       m_inst = i_inst.getMaster()
       area = m_inst.getWidth() * m_inst.getHeight()
-      inst_dict[inst] = {
+      inst_dict[inst_name] = {
         'idx':len(inst_dict),
         'cell_type_name':cell_type,
         'cell_type':get_type(cell_type, cell_dict, cell_name_dict),
@@ -147,14 +121,14 @@ for net in nets:
         'cin':0,
         'area': area}
     if s_iterm.isInputSignal():
-      net_dsts.append((inst_dict[inst]['idx'],term_name))
-      if inst_dict[inst]['cell_type'][0] ==16: # check for flipflops
-        endpoints.append(inst_dict[inst]['idx'])
+      net_dsts.append((inst_dict[inst_name]['idx'],term_name))
+      if inst_dict[inst_name]['cell_type'][0] == 16: # check for flipflops
+        endpoints.append(inst_dict[inst_name]['idx'])
     elif s_iterm.isOutputSignal():
-      net_srcs.append((inst_dict[inst]['idx'],term_name))
-      (inst_dict[inst]['slack'],
-       inst_dict[inst]['slew'],
-       inst_dict[inst]['load'])= pin_properties(term_name, CLKset, ord_design, timing)
+      net_srcs.append((inst_dict[inst_name]['idx'],term_name))
+      (inst_dict[inst_name]['slack'],
+       inst_dict[inst_name]['slew'],
+       inst_dict[inst_name]['load'])= pin_properties(term_name, CLKset, ord_design, timing)
     else:
       print("Should not be here")
   # list the connections for the graph creation step and the fainin/fanout dictionaries
@@ -178,7 +152,6 @@ inst_names = {v['idx']:k for k,v in inst_dict.items()}
 print([(x,y['slack']) for x,y  in inst_dict.items() if y['slack']<-1])
 # create DGL graph
 G = dgl.graph((srcs+dsts,dsts+srcs))
-# G = dgl.graph((srcs,dsts))
 # store the featues for cell types, slack, slew, load, area, and max_size_index(for validity checks)
 G.ndata['cell_types'] = torch.tensor([ inst_dict[x]['cell_type'] for x in inst_names.values()])
 G.ndata['slack'] = torch.tensor(
@@ -210,7 +183,6 @@ G.ndata['load'] = G.ndata['load']/norm_data['max_load']
 
 inital_total_area = torch.sum(G.ndata['area'])*norm_data['max_area']/(unit_micron*unit_micron)
 print("initial total area: %.4f"%inital_total_area)
-#print(G.ndata['cell_types'],G.ndata['cell_types'].size())
 print(device)
 print("=======================")
 G = G.to(device)
@@ -234,7 +206,7 @@ BUF_SIZE = 1500#10000
 STOP_BADS = 50
 MAX_STEPS = 50#150#200 c432#51#300
 TARGET_UPDATE = MAX_STEPS*25 #MAX_STEPS*5
-EPISODE = 10 #150 # c880 #50 c432 #15#200
+EPISODE = 2 #150 # c880 #50 c432 #15#200
 LOADTH = 0
 DELTA = 0.000001
 UPDATE_STOP = 250
@@ -283,11 +255,11 @@ update_loss = []
 update_step = []
 
 if inference:
-  soln_space_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/solution_space_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
-  cell_size_dirname = "/home/bingyuew/ASPDAC2024-Tutorial/cell_sizes/%s_inf"%design
+  soln_space_fname = pyargs.path + "/data/solution_space_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+  cell_size_dirname = pyargs.path + "/cell_sizes/%s_inf"%design
 else:
-  soln_space_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/solution_space_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
-  cell_size_dirname = "/home/bingyuew/ASPDAC2024-Tutorial/cell_sizes/%s"%design
+  soln_space_fname = pyargs.path + "/data/solution_space_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+  cell_size_dirname = pyargs.path + "/cell_sizes/%s"%design
 cell_size_dir = Path(cell_size_dirname)
 
 if not cell_size_dir.exists():
@@ -297,6 +269,15 @@ if not cell_size_dir.exists():
 #create empty file at start
 with open(soln_space_fname,"w") as f:
   pass
+
+if not(os.path.exists(pyargs.path + "/models")):
+  os.mkdir(pyargs.path + "/models")
+
+if not(os.path.exists(pyargs.path + "/models/{}".format(design))):
+  os.mkdir(pyargs.path + "/models/{}".format(design))
+
+if not(os.path.exists(pyargs.path + "/logs")):
+  os.mkdir(pyargs.path + "/logs")
 
 count_bads = 0
 best_delay = 5
@@ -377,8 +358,6 @@ for i_episode in range(num_episodes):
     reward   = torch.tensor([reward], device=device, dtype=torch.float32)
     new_area = torch.sum(episode_G.ndata['area'])
     st = time()
-    #if ~(new_area == old_area):
-    #    break
     if inference:
       print("cell: ", inst_names[int(action//2)])
       print("action: ", 'Downsize' if(action%2) else 'Upsize' )
@@ -459,7 +438,7 @@ for i_episode in range(num_episodes):
         print("%7.4e, %7.4e\n"%(working_clk_period, working_area))
         l= len(pareto_points)
         print(action)
-        slacks = [min_slack(x, cell_dict, inst_dict, ord_design, timing) for x in inst_names.values()]
+        slacks = [min_slack(x, cell_dict, inst_dict, timing) for x in inst_names.values()]
       st = time()
       cost = calc_cost(episode_G, Slack_Lambda)
       if cost<best_cost:
@@ -467,7 +446,6 @@ for i_episode in range(num_episodes):
         reset_state = get_state_cells(episode_inst_dict, inst_names, cell_dict)
       if new_TNS > episode_TNS:
         episode_TNS = new_TNS
-        #print("episode TNS updated",episode_TNS*norm_data['clk_period'])
       if new_WNS> episode_WNS:
         episode_WNS = new_WNS
       if new_area < episode_area:
@@ -532,27 +510,26 @@ for i_episode in range(num_episodes):
   data_v_episode.append((float(episode_TNS*norm_data['clk_period']),float(episode_WNS*norm_data['clk_period']), float(episode_area*norm_data['max_area'] )))
   if i_episode % 50 == 0:
     print(time())
-    training_log = open ("/home/bingyuew/ASPDAC2024-Tutorial/logs/trainLog_%s.txt"%design,"a")
+    training_log = open (pyargs.path + "/logs/trainLog_%s.txt"%design,"a")
     training_log.write('\n'+str(time())+'\n')
     training_log.close()
   episode_reward.append(cumulative_reward.item())
-  epreward = open ("/home/bingyuew/ASPDAC2024-Tutorial/logs/epreward_%s.txt"%design,"a")
+  epreward = open (pyargs.path + "/logs/epreward_%s.txt"%design,"a")
   epreward.write(str(cumulative_reward.item())+',')
   epreward.close()
-  torch.save(policy_net.state_dict(), '/home/bingyuew/ASPDAC2024-Tutorial/models/%s/trained_ep_p_local_lr_RGCN_%s.ckpt'%(design,design))
-  torch.save(target_net.state_dict(), '/home/bingyuew/ASPDAC2024-Tutorial/models/%s/trained_ep_t_local_lr_RGCN_%s.ckpt'%(design,design))
+  torch.save(policy_net.state_dict(), pyargs.path + '/models/%s/trained_ep_p_local_lr_RGCN_%s.ckpt'%(design,design))
+  torch.save(target_net.state_dict(), pyargs.path + '/models/%s/trained_ep_t_local_lr_RGCN_%s.ckpt'%(design,design))
   critical_nodes = get_critical_path_nodes(episode_G, i_episode, TOP_N_NODES, n_cells)
   print("Episode End critical nodes",critical_nodes, critical_nodes.size())
 
 print(time())
-training_log = open ("/home/bingyuew/ASPDAC2024-Tutorial/logs/trainLog_%s.txt"%design,"a")
+training_log = open (pyargs.path + "/logs/trainLog_%s.txt"%design,"a")
 training_log.write('\n'+str(time())+'\n')
 training_log.close()
 print('Complete')
 
 sorted_pareto_points = np.array(sorted(pareto_points, key=lambda x: x[0]))
-#plt.plot(sorted_pareto_points[:,0],sorted_pareto_points[:,1],'r+')
-pareto_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/pareto_points_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+pareto_fname = pyargs.path + "/data/pareto_points_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
 pf = open(pareto_fname, 'w')
 for i in range(len(sorted_pareto_points[:,0])):
   pf.write("%7.4e, %7.4e\n"%(sorted_pareto_points[i,1],sorted_pareto_points[i,0]))
@@ -568,9 +545,9 @@ for n, point in enumerate(pareto_points):
       f.write("size_cell %s %s\n"%(inst_name,pareto_cells[n][i]))
 
 data_v_episode = np.array(data_v_episode)
-TNS_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/TNS_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
-WNS_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/WNS_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
-area_fname = "/home/bingyuew/ASPDAC2024-Tutorial/data/area_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+TNS_fname = pyargs.path + "/data/TNS_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+WNS_fname = pyargs.path + "/data/WNS_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
+area_fname = pyargs.path + "/data/area_converging_plot_%s_%s_%s.txt"%(design,clk_final,semi_opt_clk)
 
 np.savetxt(TNS_fname, data_v_episode[:,0], fmt='%5.4f')
 np.savetxt(WNS_fname, data_v_episode[:,1], fmt='%5.4f')
@@ -580,7 +557,7 @@ G.num_nodes()
 print(max(episode_reward))
 
 if inference == False:
-  torch.save(policy_net.state_dict(), '/home/bingyuew/ASPDAC2024-Tutorial/models/%s/%s_policy_local_lr_rgcn.ckpt'%(design,design))
-  torch.save(target_net.state_dict(), '/home/bingyuew/ASPDAC2024-Tutorial/models/%s/%s_target_local_lr_rgcn.ckpt'%(design,design))
+  torch.save(policy_net.state_dict(), pyargs.path + '/models/%s/%s_policy_local_lr_rgcn.ckpt'%(design,design))
+  torch.save(target_net.state_dict(), pyargs.path + '/models/%s/%s_target_local_lr_rgcn.ckpt'%(design,design))
 
 print("#################Done#################")

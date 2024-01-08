@@ -20,7 +20,7 @@ from time import time
 import copy
 from pathlib import Path
 
-def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_layer):
+def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_layer, timing):
   block = ord.get_db_block()
   insts = block.getInsts()
   nets = block.getNets()
@@ -137,10 +137,10 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
       #get feature#
       #############
       if map_type == "static_power":
-        feature = design.staticPower(inst, corner)
+        feature = timing.staticPower(inst, corner)
         feature /= ((inst_x1 - inst_x0) * (inst_y1 - inst_y0))
       elif map_type == "dynamic_power":
-        feature = design.dynamicPower(inst, corner)
+        feature = timing.dynamicPower(inst, corner)
         feature /= ((inst_x1 - inst_x0) * (inst_y1 - inst_y0))
       ###################################################
       #compute the amount of pixels covered by this cell#
@@ -194,7 +194,7 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
 
 
 class CircuitOps_File_DIR:
-  def __init__(self):
+  def __init__(self, path):
     ### SET DESIGN ###
     self.DESIGN_NAME = "gcd"
     #self.DESIGN_NAME = "aes"
@@ -204,12 +204,8 @@ class CircuitOps_File_DIR:
     ### SET PLATFORM ###
     self.PLATFORM = "nangate45"
 
-    ### SET OUTPUT DIRECTORY ###
-    self.OUTPUT_DIR = "./IRs/" + self.PLATFORM + "/" + self.DESIGN_NAME
-    self.create_path()
-
     ### INTERNAL DEFINTIONS: DO NOT MODIFY BELOW ####
-    self.CIRCUIT_OPS_DIR = "./"
+    self.CIRCUIT_OPS_DIR = path
     self.DESIGN_DIR = self.CIRCUIT_OPS_DIR + "/designs/" + self.PLATFORM + "/" + self.DESIGN_NAME
     self.PLATFORM_DIR = self.CIRCUIT_OPS_DIR + "/platforms/" + self.PLATFORM
 
@@ -220,21 +216,6 @@ class CircuitOps_File_DIR:
     self.SDC_FILE = self.DESIGN_DIR + "/6_final.sdc.gz"
     self.NETLIST_FILE = self.DESIGN_DIR + "/6_final.v"
     self.SPEF_FILE = self.DESIGN_DIR + "/6_final.spef.gz"
-
-    self.cell_file = self.OUTPUT_DIR + "/cell_properties.csv"
-    self.libcell_file = self.OUTPUT_DIR + "/libcell_properties.csv"
-    self.pin_file = self.OUTPUT_DIR + "/pin_properties.csv"
-    self.net_file = self.OUTPUT_DIR + "/net_properties.csv"
-    self.cell_pin_file = self.OUTPUT_DIR + "/cell_pin_edge.csv"
-    self.net_pin_file = self.OUTPUT_DIR + "/net_pin_edge.csv"
-    self.pin_pin_file = self.OUTPUT_DIR + "/pin_pin_edge.csv"
-    self.cell_net_file = self.OUTPUT_DIR + "/cell_net_edge.csv"
-    self.cell_cell_file = self.OUTPUT_DIR + "/cell_cell_edge.csv"
-
-  def create_path(self):
-    if not(os.path.exists(self.OUTPUT_DIR)):
-      os.mkdir(self.OUTPUT_DIR)
-
 
 def add_global_connection(design, *,
                           net_name=None,
@@ -454,11 +435,12 @@ def get_type(cell_type, cell_dict, cell_name_dict):
     return None,None
 
 def pin_properties(pin_name, CLKset, ord_design, timing):
-  pin = ord_design.getStaPin(pin_name)
-  dbpin = timing.staToDBPin_ITerm(pin)
+  #pin = ord_design.getStaPin(pin_name)
+  #dbpin = timing.staToDBPin_ITerm(pin)
+  dbpin = timing.getDBPin(pin_name)
   ITerms = dbpin.getNet().getITerms()
   #slack
-  slack = min(timing.getPinMaxFallSlack(pin), timing.getPinMaxRiseSlack(pin))
+  slack = min(timing.getPinSlack(dbpin, timing.Fall, timing.Max), timing.getPinSlack(dbpin, timing.Rise, timing.Max))
   if slack < -0.5*CLKset[0]:
     slack = 0
   #slew
@@ -468,24 +450,18 @@ def pin_properties(pin_name, CLKset, ord_design, timing):
   load = 0
   for ITerm in ITerms:
     if ITerm.isInputSignal():
-      tmp_pin_name = ord_design.getITermName(ITerm)
-      tmp_sta_pin = ord_design.getStaPin(tmp_pin_name)
-      tmp_pin_port = ord_design.Pin_liberty_port(tmp_sta_pin)
-      tmp_load = 0
-      for Corner in Corners:
-        tmp_capacitance = ord_design.LibertyPort_capacitance(tmp_pin_port,\
-                                                        Corner,\
-                                                        ord_design.getStaMinMax("max"))
-        if tmp_capacitance > tmp_load:
-          tmp_load = tmp_capacitance
+      #tmp_pin_name = ord_design.getITermName(ITerm)
+      #tmp_sta_pin = ord_design.getStaPin(tmp_pin_name)
+      #tmp_pin_port = ord_design.PinLibertyPort(tmp_sta_pin)
+      tmp_load = timing.LibertyPortCapacitance(ITerm, timing.Max)
       load += tmp_load
 
   return slack, slew, load
 
-def min_slack(inst_name, cell_dict, inst_dict, ord_design, timing):
+def min_slack(inst_name, cell_dict, inst_dict, timing):
   pin_name = inst_name + cell_dict[str(inst_dict[inst_name]['cell_type'][0])]['out_pin']
-  pin = ord_design.getStaPin(pin_name)
-  slack = min(timing.getPinMaxFallSlack(pin), timing.getPinMaxRiseSlack(pin))  
+  dbpin = timing.getDBPin(pin_name)
+  slack = min(timing.getPinSlack(dbpin, timing.Fall, timing.Max), timing.getPinSlack(dbpin, timing.Rise, timing.Max))
   return slack
 
 def generate_masked_actions(graph):
@@ -688,7 +664,7 @@ def env_step(episode_G, graph, state, action, CLKset, ord_design, timing,\
   inst_name = inst_names[cell]
   cell_size = episode_inst_dict[inst_name]['cell_type'][1]
   cell_idx = episode_inst_dict[inst_name]['cell_type'][0]
-  old_slack = min_slack(inst_name, cell_dict, inst_dict, ord_design, timing)
+  old_slack = min_slack(inst_name, cell_dict, inst_dict, timing)
   o_master_name = cell_dict[str(cell_idx)]['name']+\
                   cell_dict[str(cell_idx)]['sizes'][cell_size]
   #     print("Master name old:", o_master_name, inst_name)
@@ -722,7 +698,7 @@ def env_step(episode_G, graph, state, action, CLKset, ord_design, timing,\
   db = ord.get_db()
   n_master = db.findMaster(n_master_name)
   inst.swapMaster(n_master)
-  new_slack = min_slack(inst_name, cell_dict, inst_dict, ord_design, timing)
+  new_slack = min_slack(inst_name, cell_dict, inst_dict, timing)
 
   old_area = episode_inst_dict[inst_name]['area']/ norm_data['max_area']
   episode_inst_dict[inst_name]['area']= n_master.getWidth() * n_master.getHeight()
@@ -742,8 +718,7 @@ def env_step(episode_G, graph, state, action, CLKset, ord_design, timing,\
   for n, inst in inst_names.items():
     old_slacks[n] = episode_inst_dict[inst]['slack']
     
-    tmp_sta_pin = ord_design.getStaPin(inst+cell_dict[str(episode_inst_dict[inst]['cell_type'][0])]['out_pin'])
-    tmp_db_pin = timing.staToDBPin_ITerm(tmp_sta_pin)
+    tmp_db_pin = timing.getDBPin(inst+cell_dict[str(episode_inst_dict[inst]['cell_type'][0])]['out_pin'])
     if tmp_db_pin.getNet() != None:
       (episode_inst_dict[inst]['slack'],
       episode_inst_dict[inst]['slew'],
@@ -833,8 +808,7 @@ def env_reset(reset_state = None, episode_num = None, cell_name_dict = None,\
   new_loads = torch.zeros(len(episode_inst_dict.keys()))
 
   for n, inst in inst_names.items():
-    tmp_sta_pin = ord_design.getStaPin(inst+cell_dict[str(episode_inst_dict[inst]['cell_type'][0])]['out_pin'])
-    tmp_db_pin = timing.staToDBPin_ITerm(tmp_sta_pin)
+    tmp_db_pin = timing.getDBPin(inst+cell_dict[str(episode_inst_dict[inst]['cell_type'][0])]['out_pin'])
     if tmp_db_pin.getNet() != None:
       (episode_inst_dict[inst]['slack'],
       episode_inst_dict[inst]['slew'],
@@ -894,7 +868,7 @@ def pareto(pareto_points, pareto_cells, area, clk, ep_dict, inst_names,\
   pareto_points = [val for n, val in enumerate(pareto_points) if n not in dominated_points]
   pareto_cells = [val for n, val in enumerate(pareto_cells) if n not in dominated_points]
   print("new pareto points: ",pareto_points)
-  slacks = [min_slack(x, cell_dict, inst_dict, ord_design, timing) for x in inst_names.values()]
+  slacks = [min_slack(x, cell_dict, inst_dict, timing) for x in inst_names.values()]
   test_sl = np.min(slacks)
   print(test_sl)
   return 1
