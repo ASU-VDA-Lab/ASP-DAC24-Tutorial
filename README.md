@@ -10,35 +10,35 @@ This tutorial introduces the CircuitOps and OpenROAD Python APIs, representing a
 
 This tutorial composes of two hands-on sessions, each with two demos:
 - Session 1 :
--- Demo1 : Introduce the OpenROAD Python APIs.
--- Demo2 : Two ML-EDA examples powered by the Python APIs.
---- Image-absed Static IR Drop prediction using OpenROAD Python APIs (similar to 2023 ICCAD Contest Problem C)
---- RL-based sizing using OpenROAD Python APIs
+  - Demo1 : Introduce the OpenROAD Python APIs.
+  - Demo2 : Two ML-EDA examples powered by the Python APIs.
+    - Image-absed Static IR Drop prediction using OpenROAD Python APIs (similar to 2023 ICCAD Contest Problem C)
+    - RL-based sizing using OpenROAD Python APIs
 - Session 2 :
--- Demo3 : Introduce CircuitOps's LPG grneration and query.
--- Demo4 : One ML-EDA example uses LPG.
+  - Demo3 : Introduce CircuitOps's LPG grneration and query.
+  - Demo4 : One ML-EDA example uses LPG.
 
-##Get Started
+## Get Started
 
 (If attending the 2024 ASP-DAC tutorial, please skip this part.)
 
-###Build the Docker image using the Dockerfile provided and run the docker container:
+### Build the Docker image using the Dockerfile provided and run the docker container:
 
 ```
 docker build -t <image_name> .
 docker run -it --name <container_name> <image_name>
 ```
 
-##Session 1
+## Session 1
 
-###Demo 1
+### Demo 1
 
 OpenROAD Python APIs example:
 
 ```
 ```
 
-###Demo 2 
+### Demo 2 
 
 Image-absed Static IR Drop prediction using OpenROAD Python APIs:
 
@@ -52,9 +52,9 @@ RL-based sizing using OpenROAD Python APIs:
 ./OpenROAD/build/src/openroad -python ./ASPDAC2024-Tutorial/demo2_gate_sizing_example.py --path ./ASPDAC2024-Tutorial/
 ```
 
-##Session 2
+## Session 2
 
-###Demo 3
+### Demo 3
 
 CircuitOps LPG generation and query example:
 
@@ -75,8 +75,9 @@ cd ../ASPDAC2024-Tutorial
 python3 demo3_LPG_query_example.py --path_BT ../CircuitOps/PK/ --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/generate_LPG_from_tables.py
 ```
 
-###Demo 4
+### Demo 4
 
+CircuitOps application example
 
 ```
 ```
