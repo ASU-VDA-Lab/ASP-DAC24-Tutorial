@@ -20,7 +20,7 @@ This tutorial composes of two hands-on sessions, each with two demos:
 
 ## Get Started
 
-(If attending the 2024 ASP-DAC tutorial, please skip this part.)
+(If attending the 2024 ASP-DAC tutorial, please jump to Session 1 directly.)
 
 ### Build the Docker image using the Dockerfile provided and run the docker container:
 
