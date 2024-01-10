@@ -58,7 +58,7 @@ RL-based sizing using OpenROAD Python APIs:
 
 CircuitOps LPG generation and query example:
 
-- IR Table and LPG generation 
+- IR Table generation 
 
 ```
 cd CircuitOps
@@ -66,7 +66,7 @@ cd CircuitOps
 cd ../
 ```
 
-- LPG query example
+- LPG generation & query example
 
 ```
 cd CircuitOps
