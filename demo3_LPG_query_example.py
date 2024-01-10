@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 import sys
 
-from generate_LPG_from_tables import generate_LPG_from_tables
+#from generate_LPG_from_tables import generate_LPG_from_tables
+#import importlib.util
+import argparse
+
 #############################################################################################
 #LPG dataframe properties:                                                                  #
 #('id' maps to the node id in LPG)                                                          #
@@ -55,10 +58,21 @@ def get_node_index_property_list(bt, prop_index):
   return prop
 
 if __name__ == "__main__":
+  #################################################
+  #parse args and import functions from CircuitOps#
+  #################################################
+  parser = argparse.ArgumentParser(description='path of your CircuitOps clone (must include /CircuitO')
+  parser.add_argument('--path_BT', type = str, default='./', action = 'store')
+  parser.add_argument('--path_IR', type = str, default='./', action = 'store')
+  parser.add_argument('--path_CircuitOps_py_scripts', type = str, default='./', action = 'store')
+  pyargs = parser.parse_args()
+  
+  sys.path.append(pyargs.path_CircuitOps_py_scripts)  
+  from generate_LPG_from_tables import generate_LPG_from_tables
   ##############################
   #get feature from buffer tree#
   ##############################
-  nodes, edges = load_BT(sys.argv[1])
+  nodes, edges = load_BT(pyargs.path_BT)
 
   BT_v_x = get_node_index_property_list(nodes, 4)
   BT_v_y = get_node_index_property_list(nodes, 5)
@@ -73,8 +87,9 @@ if __name__ == "__main__":
   ######################
   LPG, pin_df, cell_df, net_df, fo4_df, pin_pin_df, cell_pin_df, \
     net_pin_df, net_cell_df, cell_cell_df, edge_df, v_type, e_type \
-    = generate_LPG_from_tables(sys.argv[2])
-
+    = generate_LPG_from_tables(pyargs.path_IR)
+  
+  sys.path.remove(pyargs.path_CircuitOps_py_scripts)
   ### get dimensions
   N_pin, _ = pin_df.shape
   N_cell, _ = cell_df.shape

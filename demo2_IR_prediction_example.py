@@ -1,14 +1,12 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from ASPDAC_helpers import OpenROAD_map_creation, CircuitOps_File_DIR, load_design
-from ASPDAC_helpers import handle_size, UNet
+from demo2_IR_prediction_helpers import OpenROAD_map_creation, CircuitOps_File_DIR, load_design
+from demo2_IR_prediction_helpers import handle_size, UNet
 import argparse
 from openroad import Tech, Design, Timing
 
 if __name__ == "__main__":
-  
-  
   #############
   #load design#
   #############
@@ -18,14 +16,7 @@ if __name__ == "__main__":
   _CircuitOps_File_DIR = CircuitOps_File_DIR(pyargs.path)
   tech_design, design = load_design(_CircuitOps_File_DIR)  
   
-  #tech_design = Tech()
-  #tech_design.readLiberty(pyargs.path + "/data/NangateOpenCellLibrary_typical_para2.lib")
-  #tech_design.readLef(pyargs.path + "/data/NangateOpenCellLibrary.lef")
-  #design = Design(tech_design)  
   timing = Timing(design)
-  
-  #design.readVerilog(pyargs.path + "/data/pid_0.65.v")
-  #design.link('pid')
 
   corner = timing.getCorners()[0]
   ############
