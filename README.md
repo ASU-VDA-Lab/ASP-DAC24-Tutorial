@@ -73,7 +73,7 @@ cd ../
 cd CircuitOps
 python3 ./src/python/BT_sampling_OpenROAD.py ./IRs/nangate45/gcd/ ./PK/
 cd ../ASPDAC2024-Tutorial
-python3 demo3_LPG_query_example.py --path_BT ../CircuitOps/PK/ --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/generate_LPG_from_tables.py
+python3 demo3_LPG_query_example.py --path_BT ../CircuitOps/PK/ --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
 ```
 
 ### Demo 4
