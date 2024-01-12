@@ -79,12 +79,12 @@ cd ../
 ```
 
 - LPG generation & query example:
-  - create via IR table
+  - create LPG via IR table
   ```
   cd ASPDAC2024-Tutorial
   python3 demo3_LPG_query_example.py --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
   ```
-  - create via OpenROAD Python API
+  - create LPG via OpenROAD Python API
   ```
   cd ASPDAC2024-Tutorial
   ../OpenROAD/build/src/openroad -python demo3_LPG_query_example.py --path_CircuitOps ../CircuitOps/ --use_pd --path_LPG_gen_fun ../CircuitOps/src/python/
