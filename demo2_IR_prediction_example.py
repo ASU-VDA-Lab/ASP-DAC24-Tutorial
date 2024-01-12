@@ -30,8 +30,8 @@ if __name__ == "__main__":
   row_height, track_width, static_power_map = OpenROAD_map_creation("static_power", tech_design, design, corner, -1, timing)
   row_height, track_width, dynamic_power_map = OpenROAD_map_creation("dynamic_power", tech_design, design, corner, -1, timing)
   row_height, track_width, m1_congestion_map = OpenROAD_map_creation("congestion", tech_design, design, corner, 2, timing)
-  row_height, track_width, m2_congestion_map = OpenROAD_map_creation("congestion", tech_design, design, corner, 3, timing)
-  row_height, track_width, m3_congestion_map = OpenROAD_map_creation("congestion", tech_design, design, corner, 4, timing)
+  row_height, track_width, m2_congestion_map = OpenROAD_map_creation("congestion", tech_design, design, corner, 4, timing)
+  row_height, track_width, m3_congestion_map = OpenROAD_map_creation("congestion", tech_design, design, corner, 6, timing)
   ################
   #get golden map#
   ################
@@ -59,7 +59,8 @@ if __name__ == "__main__":
   
   l1loss = nn.L1Loss()
   loss = l1loss(static_IR_map[0], output_tensor)
-  print(loss)
+  
+  print("L1 Loss: {}".format(loss.item()))
   
 
 print("#################Done#################")
