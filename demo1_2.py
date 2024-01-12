@@ -74,3 +74,4 @@ for net in nets:
       pin_fall_arr, pin_rise_slack, pin_fall_slack, pin_slew \
       ))
 
+
