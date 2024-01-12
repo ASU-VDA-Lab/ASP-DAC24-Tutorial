@@ -37,11 +37,15 @@ docker run -it --name <container_name> <image_name>
 OpenROAD Python APIs EDA flow example:
 
 ```
+cd ASPDAC2024-Tutorial
+../OpenROAD/build/src/openroad -python demo1_1.py
 ```
 
 OpenROAD Python APIs circuit properties query example:
 
 ```
+cd ASPDAC2024-Tutorial
+../OpenROAD/build/src/openroad -python demo1_2.py
 ```
 
 ### Demo 2 
@@ -49,13 +53,15 @@ OpenROAD Python APIs circuit properties query example:
 Image-based static IR Drop prediction using OpenROAD Python APIs:
 
 ```
-./OpenROAD/build/src/openroad -python ./ASPDAC2024-Tutorial/demo2_IR_prediction_example.py --path ./CirccuitOps/
+cd ASPDAC2024-Tutorial
+../OpenROAD/build/src/openroad -python demo2_IR_prediction_example.py --path ../CirccuitOps/
 ```
 
 RL-based sizing using OpenROAD Python APIs:
 
 ```
-./OpenROAD/build/src/openroad -python ./ASPDAC2024-Tutorial/demo2_gate_sizing_example.py --path ./ASPDAC2024-Tutorial/
+cd ASPDAC2024-Tutorial
+../OpenROAD/build/src/openroad -python .demo2_gate_sizing_example.py --path ./
 ```
 
 ## Session 2
@@ -72,14 +78,17 @@ cd CircuitOps
 cd ../
 ```
 
-- LPG generation & query example
-
+- LPG generation & query example:
+  - create via IR table
 ```
-cd CircuitOps
-python3 ./src/python/BT_sampling_OpenROAD.py ./IRs/nangate45/gcd/ ./PK/
-cd ../ASPDAC2024-Tutorial
-python3 demo3_LPG_query_example.py --path_BT ../CircuitOps/PK/ --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
+cd ASPDAC2024-Tutorial
+python3 demo3_LPG_query_example.py --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
 ```
+  - create via OpenROAD Python API
+```
+cd ASPDAC2024-Tutorial
+../OpenROAD/build/src/openroad -python demo3_LPG_query_example.py --path_CircuitOps ../CircuitOps/ --use_pd --path_LPG_gen_fun ../CircuitOps/src/python/
+``` 
 
 ### Demo 4
 
