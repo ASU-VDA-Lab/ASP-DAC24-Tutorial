@@ -70,7 +70,7 @@ cd ASPDAC2024-Tutorial
 
 CircuitOps LPG generation and query example:
 
-- IR Table generation 
+- IR Tables generation 
 
 ```
 cd CircuitOps
@@ -79,7 +79,7 @@ cd ../
 ```
 
 - LPG generation & query example:
-  - create LPG via IR table
+  - create LPG via IR Tables
   ```
   cd ASPDAC2024-Tutorial
   python3 demo3_LPG_query_example.py --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
