@@ -2,14 +2,6 @@ import openroad as ord
 from openroad import Tech, Design, Timing
 import os, odb, drt
 from demo1_2_helpers import load_design
-#import argparse
-
-
-#parser = argparse.ArgumentParser(description="path of your CircuitOps and Tutorial clone")
-#parser.add_argument("--path_Demo", type = str, default='./', action = 'store')
-#parser.add_argument("--path_CircuitOps", type = str, default='./', action = 'store')
-#pyargs = parser.parse_args()
-#tech, design = load_design(pyargs.path_Demo, pyargs.path_CircuitOps)
 
 path_CircuitOps = "../CircuitOps/"
 path_Demo = "./"
@@ -77,7 +69,7 @@ for net in nets:
     pin_fall_arr = timing.getPinArrival(pin, timing.Fall)
     pin_rise_slack = timing.getPinSlack(pin, timing.Fall, timing.Max)
     pin_fall_slack = timing.getPinSlack(pin, timing.Rise, timing.Max)
-    pin_slew = timing.getPinSlew(ITerm)    
+    pin_slew = timing.getPinSlew(pin)    
     print("{} {} {} {} {} {}".format( pin_name, pin_rise_arr, \
       pin_fall_arr, pin_rise_slack, pin_fall_slack, pin_slew \
       ))
