@@ -24,7 +24,7 @@ class ReplayMemory(object):
         self.Transition = namedtuple('Transition',
                         ('graph', 'action', 'next_state', 'reward'))
         
-    # insert if not yet filled else trea it like a circular buffer and add.
+    # insert if not yet filled else treat it like a circular buffer and add.
     def push(self, *args):
         """Saves a transition."""
         if len(self.memory) < self.capacity:
@@ -111,11 +111,6 @@ def generate_masked_actions(graph):
   # If the current size is maximum size we mask it out as an action
   upper_mask = graph.ndata['cell_types'][:,1] >= graph.ndata['max_size']-1
   lower_mask = graph.ndata['cell_types'][:,1] == 0
-  ###########################
-  #upper_mask = upper_mask | (~slack_mask | ~slew_mask| ~load_mask | ~DFF_mask)
-  #         if len(delay_mask)!=0:
-  #             upper_mask[torch.tensor(delay_mask)] = True
-  ##########################
   # if the criteria for the mask is met we replace it with the minimum
   # to make sure that that action is never chosen
   mask = torch.cat((upper_mask.view(-1,1), lower_mask.view(-1,1)),1)
@@ -471,7 +466,7 @@ UPDATE_STOP = 250
 
 TOP_N_NODES = 100
 eps = 1e-5
-inference = False#True#False
+inference = False
 retrain = False
 max_TNS = -100
 max_WNS = -100

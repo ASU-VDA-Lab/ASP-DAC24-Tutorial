@@ -36,10 +36,12 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
   #get row height#
   ################
   row_height = block.getRows()[1].getOrigin()[1] - block.getRows()[0].getOrigin()[1]
+  #row_height = 20
   #################
   #get track width#
   #################
   track_width = block.getTrackGrids()[0].getGridX()[1] - block.getTrackGrids()[0].getGridX()[0]
+  #track_width = 20
   ################
   #get gcell grid#
   ################
@@ -56,13 +58,13 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
   image_height = (core_y1 - core_y0) // row_height
   if (core_y1 - core_y0)%row_height > 0:
     image_height += 1
-  feature_map = np.zeros((image_width, image_height))
   ###############################
   #assign congestion and IR drop#
   ###############################
   if map_type == "static_IR" or map_type == "congestion":
     db_tech = tech_design.getDB().getTech()
     if map_type == "static_IR":
+      feature_map = np.full((image_width, image_height), 0.0)
       #run pdn analysis#
       psm_obj = design.getPDNSim()
       psm_obj.setNet(ord.Tech().getDB().getChip().getBlock().findNet("VDD"))
@@ -80,15 +82,21 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
 
         if v > feature_map[(anchor_x - core_x0)//track_width][(anchor_y - core_y0)//row_height]:
           feature_map[(anchor_x - core_x0)//track_width][(anchor_y - core_y0)//row_height] = v
+      return row_height, track_width, feature_map
     else:
+      feature_map = np.full((image_width, image_height), -np.inf)
       layers = db_tech.getLayers()
       layer = layers[congestion_layer]
+      min_ = np.inf
       for x in range(len(gcell_grid_x)):
         for y in range(len(gcell_grid_y)):
           capacity = block.getGCellGrid().getHorizontalCapacity(layer, x, y)
           usage = block.getGCellGrid().getHorizontalUsage(layer, x, y)
+          if block.getGCellGrid().getHorizontalCapacity(layer, x, y) == 0:
+            capacity = block.getGCellGrid().getVerticalCapacity(layer, x, y)
+            usage = block.getGCellGrid().getVerticalUsage(layer, x, y)
           congestion = usage - capacity
-
+          min_ = min([min_, congestion])
           if gcell_grid_x[x] < core_x0:
             if gcell_grid_x[x] - core_x0 + gcell_grid_x_delta < core_x0:
               continue
@@ -105,13 +113,18 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
             for delta_y in range(math.ceil(gcell_grid_y_delta/row_height)):
               if anchor_x + delta_x >= feature_map.shape[0] or anchor_y + delta_y >= feature_map.shape[1]:
                 continue
-
               if congestion > feature_map[int(anchor_x + delta_x)][int(anchor_y + delta_y)]:
                 feature_map[int(anchor_x + delta_x)][int(anchor_y + delta_y)] = congestion
+      for x in range(len(feature_map)):
+        for y in range(len(feature_map[0])):
+          if feature_map[x][y] == -np.inf:
+            feature_map[x][y] = min_
+      return row_height, track_width, feature_map
   ################################################################################
   #assign static_power and dynamic_power value by iterating through each instance#
   ################################################################################
   if map_type == "static_power" or map_type == "dynamic_power":
+    feature_map = np.full((image_width, image_height), 0.0)
     for inst in insts:
       ###############
       #get cell bbox#
@@ -180,7 +193,7 @@ def OpenROAD_map_creation(map_type, tech_design, design, corner, congestion_laye
 
           cover_area = tmp_height * tmp_width
           feature_map[anchor_index_x + x][anchor_index_y + y] += feature * cover_area
-  return row_height, track_width, feature_map
+    return row_height, track_width, feature_map
 
 class CircuitOps_File_DIR:
   def __init__(self, path):
@@ -263,6 +276,7 @@ def load_design(_CircuitOps_File_DIR):
   add_global_connection(design, net_name="VDD", pin_pattern="VDD", power=True)
   add_global_connection(design, net_name="VSS", pin_pattern="VSS", ground=True)
   odb.dbBlock.globalConnect(ord.get_db_block())
+  design.getGlobalRouter().globalRoute()
   return tech_design, design
 
 class UNet(nn.Module):

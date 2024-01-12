@@ -162,7 +162,9 @@ cell_size_dir = Path(cell_size_dirname)
 if not cell_size_dir.exists():
   cell_size_dir.mkdir(parents=True, exist_ok=True)
 
-#create empty file at start
+############################
+#create empty file at start#
+############################
 with open(soln_space_fname,"w") as f:
   pass
 
@@ -178,12 +180,17 @@ if not(os.path.exists(pyargs.path + "/logs")):
 epreward = open ("epreward.txt","w")
 epreward.truncate()
 epreward.close()
+
+
 print("RUNNING")
 train_start_time = time()
+###############################
+#no data points               #
+#not inference in the tutorial#
+###############################
 if inference:
   MAX_STEPS = 75
   min_slack_plot = torch.min(episode_G.ndata['slack']*norm_data['clk_period']).item()
-if inference:
   num_episodes = 1
   tracking_d = open ("tracking_d.txt","w")
   tracking_d.truncate()
@@ -202,11 +209,16 @@ pareto_cells  = []
 best_cost = calc_cost(episode_G, Slack_Lambda)
 reset_state = get_state_cells(episode_inst_dict, inst_names, cell_dict)
 data_v_episode = []
+################
+#start training#
+################
 for i_episode in range(num_episodes):
   random_taken = 0
   total_taken = 0
   print("Episode :",i_episode)
-  # Initialize the environment and state
+  ######################################
+  #Initialize the environment and state#
+  ######################################
   episode_G, episode_inst_dict, working_clk = env_reset(reset_state, i_episode,\
       cell_name_dict, CLKset, ord_design, timing, G, inst_dict, CLK_DECAY, CLK_DECAY_STRT,\
       clk_init, clk_range, clk_final, inst_names, block, cell_dict, norm_data, device)
@@ -215,7 +227,9 @@ for i_episode in range(num_episodes):
   print("RESET COST:",best_cost)
   cumulative_reward = 0
   count_bads = 0
-  
+  ############################
+  #get current WNS, TNS, area#
+  ############################
   old_WNS = torch.min(episode_G.ndata['slack'])
   old_TNS = torch.sum(torch.min(episode_G.ndata['slack'], torch.zeros_like(episode_G.ndata['slack'])))
   old_area = torch.sum(episode_G.ndata['area'])
@@ -225,9 +239,9 @@ for i_episode in range(num_episodes):
   print("episode TNS",episode_TNS*norm_data['clk_period'])
   for t in range(MAX_STEPS):
     print("################STEP {:2d}################".format(t))
-    #while True:
-    ## Select and perform an action
-    st =time()
+    ##############################
+    #select and perform an action#
+    ##############################
     critical_nodes = get_critical_path_nodes(episode_G, i_episode, TOP_N_NODES, n_cells)
     critical_graph = get_subgraph(episode_G, critical_nodes)
     state  = get_state(critical_graph, n_state, n_cells, n_features)
@@ -235,19 +249,25 @@ for i_episode in range(num_episodes):
                         = select_action(critical_graph, inference, total_taken,\
                           steps_done, random_taken, policy_net,\
                           EPS_END, EPS_START, EPS_DECAY, device)
-    st = time()
     if action == -1:
+      #######
+      #reset#
+      #######
       print("no action")
       cost = calc_cost(episode_G, Slack_Lambda)
       if cost<best_cost:
         best_cost = cost
         reset_state = get_state_cells(episode_inst_dict, inst_names, cell_dict)
       break
+    ###############################################
+    #get reward and next state based on the action#
+    ###############################################
     reward, done_env, next_state, episode_inst_dict, episode_G  = env_step(episode_G, critical_graph,\
         state, action.item(), CLKset, ord_design, timing, cell_dict, norm_data, inst_names,\
         episode_inst_dict, inst_dict, n_cells, n_features, block, device, Slack_Lambda, eps)
     reward = torch.tensor([reward], device=device, dtype=torch.float32)
     new_area = torch.sum(episode_G.ndata['area'])
+    
     if inference:
       print("cell: ", inst_names[int(action//2)])
       print("action: ", 'Downsize' if(action%2) else 'Upsize' )
@@ -270,11 +290,14 @@ for i_episode in range(num_episodes):
       count_bads += 1
     else:
       count_bads = 0
+    #########################################
+    #stop this episode if it's getting worse#
+    #########################################
     if count_bads >= STOP_BADS:
       print("Stopping bad actions")
       count_bads = 0
       done = 1
-
+    
     cumulative_reward += reward
     if done:
       next_state = None
@@ -282,6 +305,9 @@ for i_episode in range(num_episodes):
     else:
       next_state_push = next_state
 
+    #############################
+    #store into the reply buffer#
+    #############################
     if not inference:
       memory.push(critical_graph.clone(), action,next_state_push, reward)
       # Perform one step of the optimization (on the target network)
@@ -307,13 +333,16 @@ for i_episode in range(num_episodes):
         print("################################ NEW TNS ################################")
         print(new_TNS.item()*norm_data['clk_period'])
         max_TNS = new_TNS
+      
       working_clk_period = (working_clk - new_WNS*norm_data['clk_period']).item()
       if working_clk_period < min_working_clk:
         print("############################ operating delay ############################")
         print(working_clk_period)
         min_working_clk = working_clk_period
         print("#########################################################################")
+      
       working_area = new_area*norm_data['max_area']/(unit_micron*unit_micron)
+      
       point_time = time()
       with open(soln_space_fname,"a") as f:
         f.write("%7.4e, %7.4e, %d\n"%(working_clk_period, working_area, point_time-train_start_time))
@@ -343,13 +372,16 @@ for i_episode in range(num_episodes):
     working_clk_period = (working_clk-(new_WNS)*norm_data['clk_period']).item()
     if t%10 == 9 :
       Slack_Lambda = update_lambda(Slack_Lambda, episode_G.ndata['slack'].to('cpu'), K)
+    ############
+    #output log#
+    ############
     if t%25 == 24 :
       print("Taken", random_taken/total_taken)
       print("old_WNS: {}   new_WNS: {}".format(old_WNS.item(), new_WNS.item()))
       print("Updated WNS",old_WNS.item()*norm_data['clk_period'], new_WNS.item()*norm_data['clk_period'])
       print("Updated TNS",old_TNS.item()*norm_data['clk_period'], new_TNS.item()*norm_data['clk_period'])
       print(" # Critical Nodes", critical_nodes.size(), critical_graph.num_nodes())
-    st = time()
+    #st = time()
 
     old_WNS = new_WNS
     old_TNS = new_TNS
@@ -407,7 +439,10 @@ for i_episode in range(num_episodes):
   critical_nodes = get_critical_path_nodes(episode_G, i_episode, TOP_N_NODES, n_cells)
   print("Episode End critical nodes",critical_nodes, critical_nodes.size())
 
-print(time())
+##############
+#end training#
+##############
+#print(time())
 training_log = open (pyargs.path + "/logs/trainLog_%s.txt"%design,"a")
 training_log.write('\n'+str(time())+'\n')
 training_log.close()
@@ -439,7 +474,7 @@ np.savetxt(WNS_fname, data_v_episode[:,1], fmt='%5.4f')
 np.savetxt(area_fname, data_v_episode[:,2], fmt='%5.4f')
 
 G.num_nodes()
-print(max(episode_reward))
+#print(max(episode_reward))
 
 if inference == False:
   torch.save(policy_net.state_dict(), pyargs.path + '/models/%s/%s_policy_local_lr_rgcn.ckpt'%(design,design))
