@@ -34,7 +34,12 @@ docker run -it --name <container_name> <image_name>
 
 ### Demo 1
 
-OpenROAD Python APIs example:
+OpenROAD Python APIs EDA flow example:
+
+```
+```
+
+OpenROAD Python APIs circuit properties query example:
 
 ```
 ```
