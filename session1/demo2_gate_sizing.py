@@ -39,7 +39,8 @@ if is_ipython:
 ##################################
 #use gpu or cpu(cpu for tutorial)#
 ##################################
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 #print(device)
 ####################################################
 #load cell dictionary with name and size properties#
