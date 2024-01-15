@@ -403,6 +403,10 @@ print(v_bt_e.a.sum())
 pin_df["net_id_rm_bt"] = pin_df["net_id"]
 pin_df.loc[tree_end_list_new, ["net_id_rm_bt"]] = v_net_id.a[tree_end_list_new]
 
+############################################
+#Gathering dataset for training and testing#
+############################################
+
 ### get selected pins ###
 selected_pin_df = pin_df[(pin_df.selected == True) & (pin_df.is_buf == False) & (pin_df.is_inv == False)]
 
@@ -413,10 +417,6 @@ driver_pin_info = driver_pin_info.rename(columns={"id":"driver_pin_id", "x":"dri
 cell_info = cell_df.loc[:, ["id", "libcell_id", "fo4_delay", "fix_load_delay"]]
 cell_info = cell_info.rename(columns={"id":"driver_id", "y":"driver_y"})
 driver_pin_info = driver_pin_info.merge(cell_info, on="driver_id", how="left")
-
-############################################
-#Gathering dataset for training and testing#
-############################################
 
 ### get sink pins and related properties ###
 sink_pin = selected_pin_df[selected_pin_df.dir==1]
@@ -496,6 +496,5 @@ plt.plot(pred, train_y, "*")
 pred = model.predict(test_x)
 
 plt.plot(pred, test_y, "*")
-
 
 
