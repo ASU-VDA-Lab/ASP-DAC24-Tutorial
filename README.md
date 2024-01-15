@@ -82,12 +82,12 @@ cd ../
   - create LPG via IR Tables
   ```
   cd ASPDAC2024-Tutorial
-  python3 demo3_LPG_query_example.py --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
+  python3 session2/demo3_LPG_query_example.py --path_IR ./CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ./CircuitOps/src/python/
   ```
   - create LPG via OpenROAD Python API
   ```
   cd ASPDAC2024-Tutorial
-  ../OpenROAD/build/src/openroad -python demo3_LPG_query_example.py --path_CircuitOps ../CircuitOps/ --use_pd --path_LPG_gen_fun ../CircuitOps/src/python/
+  ./OpenROAD/build/src/openroad -python session2/demo3_LPG_query_example.py --path_CircuitOps ./CircuitOps/ --use_pd --path_LPG_gen_fun ./CircuitOps/src/python/
   ``` 
 
 ### Demo 4
@@ -95,5 +95,6 @@ cd ../
 CircuitOps application example
 
 ```
+./OpenROAD/build/src/openroad -python session2/demo4_preroute_net_delay_prediction.py
 ```
 
