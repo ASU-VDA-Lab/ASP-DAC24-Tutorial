@@ -23,7 +23,7 @@ This tutorial is composed of two hands-on sessions, each with two demos:
 
 (If attending the 2024 ASP-DAC tutorial live, please jump to Session 1 directly.)
 
-### Build the Docker image using the Dockerfile provided and run the Docker container:
+###  Option 1: Build the Docker image using the Dockerfile provided and run the Docker container:
 
 ```
 docker build -t <image_name> .
@@ -31,20 +31,23 @@ docker run -it --name <container_name> <image_name>
 ```
 
 ## Session 1
+The following script asssume that we work from the ASPDAC2024-Tutorial directory.
+Prior to testing the script please select the Tutorial directory.
+```
+cd <Path to ASPDAC2024-Tutorial Directoy>
+```
 
 ### Demo 1
 
 OpenROAD Python APIs EDA flow example:
 
 ```
-cd ASPDAC2024-Tutorial
 ./OpenROAD/build/src/openroad -python session1/demo1_flow.py
 ```
 
 OpenROAD Python APIs circuit properties query example:
 
 ```
-cd ASPDAC2024-Tutorial
 ./OpenROAD/build/src/openroad -python session1/demo1_query.py
 ```
 
@@ -53,14 +56,12 @@ cd ASPDAC2024-Tutorial
 Image-based static IR Drop prediction using OpenROAD Python APIs:
 
 ```
-cd ASPDAC2024-Tutorial
 ./OpenROAD/build/src/openroad -python session1/demo2_IR.py 
 ```
 
 RL-based sizing using OpenROAD Python APIs:
 
 ```
-cd ASPDAC2024-Tutorial
 ./OpenROAD/build/src/openroad -python session1/demo2_gate_sizing.py 
 ```
 
@@ -81,13 +82,12 @@ cd ../
 - LPG generation & query example:
   - create LPG via IR Tables
   ```
-  cd ASPDAC2024-Tutorial
-  python3 demo3_LPG_query_example.py --path_IR ../CircuitOps/IRs/nangate45/gcd/ --path_LPG_gen_fun ../CircuitOps/src/python/
+  python3 session2/demo3_LPG_query_example.py 
   ```
+  
   - create LPG via OpenROAD Python API
   ```
-  cd ASPDAC2024-Tutorial
-  ../OpenROAD/build/src/openroad -python demo3_LPG_query_example.py --path_CircuitOps ../CircuitOps/ --use_pd --path_LPG_gen_fun ../CircuitOps/src/python/
+  ./OpenROAD/build/src/openroad -python session2/demo3_LPG_query_example.py --use_pd
   ``` 
 
 ### Demo 4

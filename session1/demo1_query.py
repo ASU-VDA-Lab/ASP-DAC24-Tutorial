@@ -3,8 +3,13 @@ from openroad import Tech, Design, Timing
 import os, odb, drt
 from demo1_helpers import load_design
 from pathlib import Path
+import argparse
 
-tech, design = load_design(Path("./"), verilog = False)
+parser = argparse.ArgumentParser(description="Path to root of the tutorial directory")
+parser.add_argument("--path", type = Path, default='./', action = 'store')
+pyargs = parser.parse_args()
+tech, design = load_design(pyargs.path, verilog = False) 
+# tech, design = load_design(Path("../", verilog = False) # For demo to be copied.
 
 timing = Timing(design)
 corner = timing.getCorners()[0]

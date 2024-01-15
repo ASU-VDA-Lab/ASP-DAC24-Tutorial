@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import sys
 import argparse
+from pathlib import Path
 
 #############################################################################################
 #LPG dataframe properties:                                                                  #
@@ -37,13 +38,13 @@ if __name__ == "__main__":
   #parse args and import functions from CircuitOps#
   #################################################
   parser = argparse.ArgumentParser(description='path of your CircuitOps clone and the file of generate_LPG_from_tables.py')
-  parser.add_argument('--path_IR', type = str, default='./', action = 'store')
-  parser.add_argument('--path_CircuitOps', type = str, default='./', action = 'store')
+  parser.add_argument('--path_IR', type = Path, default='./CircuitOps/IRs/nangate45/gcd/', action = 'store')
+  parser.add_argument('--path_CircuitOps', type = Path, default='./CircuitOps/', action = 'store')
   parser.add_argument('--use_pd', default = False, action = 'store_true')
-  parser.add_argument('--path_LPG_gen_func', type = str, default='./', action = 'store')
+  parser.add_argument('--path_LPG_gen_func', type = Path, default='./CircuitOps/src/python/', action = 'store')
   pyargs = parser.parse_args()
   
-  sys.path.append(pyargs.path_LPG_gen_func)  
+  sys.path.append(str(pyargs.path_LPG_gen_func))
   from generate_LPG_from_tables import generate_LPG_from_tables
 
   ######################
@@ -51,10 +52,10 @@ if __name__ == "__main__":
   ######################
   LPG, pin_df, cell_df, net_df, fo4_df, pin_pin_df, cell_pin_df, \
     net_pin_df, net_cell_df, cell_cell_df, edge_df, v_type, e_type \
-    = generate_LPG_from_tables(data_root = pyargs.path_IR) if not pyargs.use_pd else \
-      generate_LPG_from_tables(data_root = pyargs.path_CircuitOps, use_python_api = pyargs.use_pd, write_table = False)
+    = generate_LPG_from_tables(data_root = f"{pyargs.path_IR}/") if not pyargs.use_pd else \
+      generate_LPG_from_tables(data_root = f"{pyargs.path_CircuitOps}/", use_python_api = pyargs.use_pd, write_table = False)
 
-  sys.path.remove(pyargs.path_LPG_gen_func)
+  sys.path.remove(str(pyargs.path_LPG_gen_func))
   ### get dimensions
   N_pin, _ = pin_df.shape
   N_cell, _ = cell_df.shape
@@ -86,6 +87,7 @@ if __name__ == "__main__":
 
   v_props = LPG.get_vertices(vprops = [LPG_pin_slack, LPG_pin_risearr, LPG_pin_cap, LPG_cell_is_seq, LPG_net_net_route_length])
   #v_props will contain the node index, pin_slack, pin_rise_arrival_time, pin_cap, cell_is_seq, net_route_length
-  print(v_props)
-
+  print("Index |       slack | rise_arrival |         cap | is_seq | route_length")
+  for v_row in v_props[0:10,:]:
+      print(f"{int(v_row[0]):5d} | {v_row[1]:7.4e} | {v_row[2]:12.4e} | {v_row[3]:11.4e} | {bool(v_row[4])!s:6} | {v_row[5]:7.4e}")
 

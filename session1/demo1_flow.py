@@ -3,11 +3,17 @@ from openroad import Tech, Design
 import os, odb, drt
 from pathlib import Path
 from demo1_helpers import load_design
+import argparse 
 
 ############
 #Read Files#
 ############
-tech, design = load_design(Path("./"), verilog = True)
+
+parser = argparse.ArgumentParser(description="Path to root of the tutorial directory")
+parser.add_argument("--path", type = Path, default='./', action = 'store')
+pyargs = parser.parse_args()
+tech, design = load_design(pyargs.path, verilog = True) 
+# tech, design = load_design(Path("../", verilog = True) # For demo to be copied.
 
 ###############
 #Floorplanning#
