@@ -26,15 +26,15 @@ RUN pip install torch
 RUN pip install dgl
 RUN pip install pycairo
 RUN pip install pandas
+RUN pip install scikit-learn
 
 WORKDIR /app
-RUN git clone --recursive https://github.com/The-OpenROAD-Project/OpenROAD.git
-RUN git clone --recursive https://github.com/NVlabs/CircuitOps.git
+RUN git clone --recursive https://github.com/ASU-VDA-Lab/ASP-DAC24-Tutorial.git
 
-WORKDIR /app/OpenROAD
+WORKDIR /app/ASP-DAC24-Tutorial/OpenROAD/
 RUN ./etc/DependencyInstaller.sh
 RUN mkdir build
-WORKDIR /app/OpenROAD/build
+WORKDIR /app/ASP-DAC24-Tutorial/OpenROAD/build
 RUN cmake ..
 RUN make -j 6
 
