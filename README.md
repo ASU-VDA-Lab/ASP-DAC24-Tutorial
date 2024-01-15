@@ -38,14 +38,14 @@ OpenROAD Python APIs EDA flow example:
 
 ```
 cd ASPDAC2024-Tutorial
-../OpenROAD/build/src/openroad -python demo1_1.py
+./OpenROAD/build/src/openroad -python session1/demo1_flow.py
 ```
 
 OpenROAD Python APIs circuit properties query example:
 
 ```
 cd ASPDAC2024-Tutorial
-../OpenROAD/build/src/openroad -python demo1_2.py
+./OpenROAD/build/src/openroad -python session1/demo1_query.py
 ```
 
 ### Demo 2 
@@ -54,14 +54,14 @@ Image-based static IR Drop prediction using OpenROAD Python APIs:
 
 ```
 cd ASPDAC2024-Tutorial
-../OpenROAD/build/src/openroad -python demo2_IR_prediction_example.py --path ../CirccuitOps/
+./OpenROAD/build/src/openroad -python session1/demo2_IR.py 
 ```
 
 RL-based sizing using OpenROAD Python APIs:
 
 ```
 cd ASPDAC2024-Tutorial
-../OpenROAD/build/src/openroad -python .demo2_gate_sizing_example.py --path ./
+./OpenROAD/build/src/openroad -python session1/demo2_gate_sizing.py 
 ```
 
 ## Session 2
