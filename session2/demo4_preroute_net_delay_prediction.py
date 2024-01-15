@@ -498,4 +498,3 @@ pred = model.predict(test_x)
 plt.plot(pred, test_y, "*")
 
 
-
