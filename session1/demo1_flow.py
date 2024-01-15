@@ -13,8 +13,8 @@ tech, design = load_design(Path("./"), verilog = True)
 #Floorplanning#
 ###############
 floorplan = design.getFloorplan()
-die_area = odb.Rect(design.micronToDBU(0), design.micronToDBU(0), design.micronToDBU(100.13), design.micronToDBU(100.8))
-core_area = odb.Rect(design.micronToDBU(10.07), design.micronToDBU(11.2), design.micronToDBU(90.25), design.micronToDBU(91))
+die_area = odb.Rect(design.micronToDBU(0), design.micronToDBU(0), design.micronToDBU(45), design.micronToDBU(45))
+core_area = odb.Rect(design.micronToDBU(5), design.micronToDBU(5), design.micronToDBU(40), design.micronToDBU(40))
 floorplan.initFloorplan(die_area, core_area)
 floorplan.makeTracks()
 
@@ -52,7 +52,7 @@ gpl.setTimingDrivenMode(False)
 gpl.setRoutabilityDrivenMode(False)
 gpl.setUniformTargetDensityMode(False)
 gpl.setInitialPlaceMaxIter(20)
-gpl.setTargetDensity(0.6)
+gpl.setTargetDensity(0.7)
 gpl.setInitDensityPenalityFactor(0.001)
 gpl.doInitialPlace()
 
@@ -95,5 +95,7 @@ grt.setAdjustment(0.5)
 grt.setVerbose(True)
 grt.globalRoute(True)
 
-
-
+###########
+#Write DEF#
+###########
+design.writeDef("./designs/demo1_flow.def")

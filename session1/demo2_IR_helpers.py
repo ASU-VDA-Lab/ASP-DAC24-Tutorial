@@ -269,41 +269,44 @@ def load_design(demo_path):
 class UNet(nn.Module):
   def __init__(self):
     super(UNet, self).__init__()
+    
+    self.enc_conv1 = nn.Conv2d(5, 64, kernel_size=3, padding='same')
+    self.enc_conv2 = nn.Conv2d(64, 128, kernel_size=3, padding='same')
+    self.enc_conv3 = nn.Conv2d(128, 256, kernel_size=3, padding='same')
+    self.enc_conv4 = nn.Conv2d(256, 512, kernel_size=3, padding='same')
 
-    self.enc_conv1 = nn.Conv2d(5, 64, kernel_size=3, padding=1)
-    self.enc_conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-    self.enc_conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
-    self.enc_conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
-
-    self.dec_conv1 = nn.Conv2d(512, 256, kernel_size=3, padding=1)
-    self.dec_conv2 = nn.Conv2d(256, 128, kernel_size=3, padding=1)
-    self.dec_conv3 = nn.Conv2d(128, 64, kernel_size=3, padding=1)
-    self.dec_conv4 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
+    self.dec_conv1 = nn.Conv2d(512, 256, kernel_size=3, padding='same')
+    self.dec_conv2 = nn.Conv2d(256, 128, kernel_size=3, padding='same')
+    self.dec_conv3 = nn.Conv2d(128, 64, kernel_size=3, padding='same')
+    self.dec_conv4 = nn.Conv2d(10, 1, kernel_size=3, padding='same')
 
     self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
     self.upconv1 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
     self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
     self.upconv3 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
+    self.upconv4 = nn.ConvTranspose2d(64, 5, kernel_size=2, stride=2)
 
   def forward(self, x0):
     x0 = torch.cat(x0, dim=1)
-    x1 = nn.functional.relu(self.enc_conv1(x0))
-    x2 = nn.functional.relu(self.enc_conv2(self.pool(x1)))
-    x3 = nn.functional.relu(self.enc_conv3(self.pool(x2)))
-    x4 = nn.functional.relu(self.enc_conv4(self.pool(x3)))
+    x1 = self.pool(nn.functional.relu(self.enc_conv1(x0)))
+    x2 = self.pool(nn.functional.relu(self.enc_conv2(x1)))
+    x3 = self.pool(nn.functional.relu(self.enc_conv3(x2)))
+    x4 = self.pool(nn.functional.relu(self.enc_conv4(x3)))
 
     x = nn.functional.relu(self.upconv1(x4))
-    x = torch.cat([x, x3], dim=1)
+    x = torch.cat([F.pad(x,(0,x3.size()[-1] - x.size()[-1],0,x3.size()[-2] - x.size()[-2]),'constant',0), x3], dim=1)
     x = nn.functional.relu(self.dec_conv1(x))
 
     x = nn.functional.relu(self.upconv2(x))
-    x = torch.cat([x, x2], dim=1)
+    x = torch.cat([F.pad(x,(0,x2.size()[-1] - x.size()[-1],0,x2.size()[-2] - x.size()[-2]),'constant',0), x2], dim=1)
     x = nn.functional.relu(self.dec_conv2(x))
 
     x = nn.functional.relu(self.upconv3(x))
-    x = torch.cat([x, x1], dim=1)
+    x = torch.cat([F.pad(x,(0,x1.size()[-1] - x.size()[-1],0,x1.size()[-2] - x.size()[-2]),'constant',0), x1], dim=1)
     x = nn.functional.relu(self.dec_conv3(x))
 
+    x = nn.functional.relu(self.upconv4(x))
+    x = torch.cat([F.pad(x,(0,x0.size()[-1] - x.size()[-1],0,x0.size()[-2] - x.size()[-2]),'constant',0), x0], dim=1)
     x = self.dec_conv4(x)
 
     return x
