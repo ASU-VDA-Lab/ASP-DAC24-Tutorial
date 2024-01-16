@@ -15,7 +15,7 @@ from demo4_preroute_net_delay_prediction_helpers import *
 # read IR tables #
 ##################
 pin_df, cell_df, net_df, pin_pin_df, cell_pin_df, net_pin_df, net_cell_df, cell_cell_df, fo4_df = \
-  read_tables_OpenROAD("../CircuitOps/IRs/nangate45/gcd/")
+  read_tables_OpenROAD("./CircuitOps/IRs/nangate45/gcd/")
 
 ######################
 # rename dfs columns #
@@ -272,7 +272,6 @@ labels = get_large_components(hist, th=cell_cnt_th)
 v_valid_pins = g_pin.new_vp("bool")
 for l in labels:
     v_valid_pins.a[comp.a==l] = True
-print(v_valid_pins.a.sum())
 
 ### get subgraphs
 e_label = g_pin.new_ep("bool")
@@ -310,7 +309,6 @@ v_bt_s.a[src[is_s==1]] = True
 src_iss = v_bt_s.a[src]==True
 is_e = (src_isbuf | src_isinv | src_iss) & np.logical_not(tar_isbuf) & np.logical_not(tar_isinv)
 v_bt_e.a[tar[is_e==1]] = True
-print("buf tree start cnt: ", v_bt_s.a.sum(), "buf tree end cnt: ", v_bt_e.a.sum())
 
 ### get buf tree start pin id ###
 v_net_id = g.new_vp("int")
@@ -348,7 +346,6 @@ for i in loc:
     out_v_list.append(out_v)
 new_v = np.concatenate(out_v_list, axis=0)
 N,  = new_v.shape
-print("num of buffer tree out pins: ", N)
 while N > 0:
     out_v_list = []
     for i in new_v:
@@ -389,16 +386,13 @@ while N > 0:
             out_v_list.append(out_v)
     new_v = np.concatenate(out_v_list, axis=0)
     N, = new_v.shape
-    print("num of buffer tree out pins: ", N)
 
 ### get actual number of BT end pin cnt
 tree_end_list_new = np.concatenate(tree_end_list, axis=0)
-print(tree_end_list_new.shape[0], v_bt_e.a.sum())
 N_bt_e = tree_end_list_new.shape[0]
 v_bt_e = g.new_vp("bool")
 v_bt_e.a = False
 v_bt_e.a[tree_end_list_new] = True
-print(v_bt_e.a.sum())
 
 pin_df["net_id_rm_bt"] = pin_df["net_id"]
 pin_df.loc[tree_end_list_new, ["net_id_rm_bt"]] = v_net_id.a[tree_end_list_new]
@@ -459,6 +453,7 @@ sink_pin_info = sink_pin_info.merge(cell_arc, on="id", how="left")
 ### stage delay = driver cell arc delay + net delay ###
 sink_pin_info["stage_delay"] = sink_pin_info.arc_delay_max + sink_pin_info.net_delay_max
 
+print("Reference data frame")
 print(sink_pin_info)
 
 # x, y: distance between driver and the target sink
@@ -491,10 +486,22 @@ model.fit(train_x, train_y)
 
 pred = model.predict(train_x)
 
-plt.plot(pred, train_y, "*")
+plt.figure()
+plt.scatter(pred, train_y, label = "Training")
 
 pred = model.predict(test_x)
+plt.scatter(pred, test_y, label = "Testing")
 
-plt.plot(pred, test_y, "*")
+data_range = np.arange(min(np.min(train_y), np.min(test_y)), 
+                       max(np.max(train_y), np.max(test_y)),
+                       0.005
+                      )
+plt.plot(data_range, data_range, label="Reference")
 
+plt.title("Accuracy on trianing data and testing data")
+
+plt.legend()
+plt.xlabel("Reference")
+plt.ylabel("Predicted")
+plt.show()
 

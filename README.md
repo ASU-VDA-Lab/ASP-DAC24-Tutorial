@@ -95,7 +95,6 @@ cd ../
 CircuitOps application example
 
 ```
-cd ASPDAC2024-Tutorial
 ./OpenROAD/build/src/openroad -python session2/demo4_preroute_net_delay_prediction.py
 ```
 

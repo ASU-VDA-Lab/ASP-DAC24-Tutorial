@@ -32,17 +32,6 @@ def read_tables_OpenROAD(data_root, design=None):
     cell_pin_df = pd.read_csv(cell_pin_path)
     net_pin_df = pd.read_csv(net_pin_path)
     net_cell_df = pd.read_csv(net_cell_path)
-
-    print("fo4_df shape: ", fo4_df.shape)
-    print("pin_df.shape: ", pin_df.shape)
-    print("cell_df.shape: ", cell_df.shape)
-    print("net_df.shape: ", net_df.shape)
-    print("pin_edge_df.shape: ", pin_pin_df.shape)
-    print("cell_edge_df.shape: ", cell_pin_df.shape)
-    print("net_edge_df.shape: ", net_pin_df.shape)
-    print("net_cell_edge_df.shape: ", net_cell_df.shape)
-    print("cell_cell_edge_df.shape: ", cell_cell_df.shape)
-
     return pin_df, cell_df, net_df, pin_pin_df, cell_pin_df, net_pin_df, net_cell_df, cell_cell_df, fo4_df
 
 ### rename cells with cell0, cell1, ... and update the cell names in pin_df
@@ -90,50 +79,30 @@ def generate_edge_df_OpenROAD(pin_df, cell_df, net_df, pin_pin_df, cell_pin_df, 
     cell_cell_df = cell_cell_df.merge(tar, on="tar", how="left")
 
     # drop illegal edges
-    print("pin_pin shape: ")
-    print(pin_pin_df.shape)
     idx = pin_pin_df[pd.isna(pin_pin_df.src_id)].index
     pin_pin_df = pin_pin_df.drop(idx)
-    print(pin_pin_df.shape)
     idx = pin_pin_df[pd.isna(pin_pin_df.tar_id)].index
     pin_pin_df = pin_pin_df.drop(idx)
-    print(pin_pin_df.shape)
 
-    print("cell_pin shape: ")
-    print(cell_pin_df.shape)
     idx = cell_pin_df[pd.isna(cell_pin_df.src_id)].index
     cell_pin_df = cell_pin_df.drop(idx)
-    print(cell_pin_df.shape)
     idx = cell_pin_df[pd.isna(cell_pin_df.tar_id)].index
     cell_pin_df = cell_pin_df.drop(idx)
-    print(cell_pin_df.shape)
 
-    print("net_pin shape: ")
-    print(net_pin_df.shape)
     idx = net_pin_df[pd.isna(net_pin_df.src_id)].index
     net_pin_df = net_pin_df.drop(idx)
-    print(net_pin_df.shape)
     idx = net_pin_df[pd.isna(net_pin_df.tar_id)].index
     net_pin_df = net_pin_df.drop(idx)
-    print(net_pin_df.shape)
 
-    print("net_cell shape: ")
-    print(net_cell_df.shape)
     idx = net_cell_df[pd.isna(net_cell_df.src_id)].index
     net_cell_df = net_cell_df.drop(idx)
-    print(net_cell_df.shape)
     idx = net_cell_df[pd.isna(net_cell_df.tar_id)].index
     net_cell_df = net_cell_df.drop(idx)
-    print(net_cell_df.shape)
 
-    print("cell_cell shape: ")
-    print(cell_cell_df.shape)
     idx = cell_cell_df[pd.isna(cell_cell_df.src_id)].index
     cell_cell_df = cell_cell_df.drop(idx)
-    print(cell_cell_df.shape)
     idx = cell_cell_df[pd.isna(cell_cell_df.tar_id)].index
     cell_cell_df = cell_cell_df.drop(idx)
-    print(cell_cell_df.shape)
 
     edge_df = pd.concat([pin_pin_df.loc[:,["src_id", "tar_id"]], cell_pin_df.loc[:,["src_id", "tar_id"]], \
                       net_pin_df.loc[:,["src_id", "tar_id"]], net_cell_df.loc[:,["src_id", "tar_id"]], \
@@ -146,7 +115,6 @@ def get_large_components(hist, th=2000):
     for i in range(len(hist)):
         if hist[i] > th:
             labels.append(i)
-            print(i, hist[i])
     return labels
 
 ### generate subgraph
@@ -155,13 +123,11 @@ def get_subgraph(g_old, v_mask, e_mask):
     print("connected component graph: num of edge; num of nodes", u.num_vertices(), u.num_edges())
     ### check whether subgraph is connected and is DAG
     _, hist2 = label_components(u, directed=False)
-    print(hist2, is_DAG(u))
     return u
 
 ### generate cell graph from cell ids
 def get_cell_graph_from_cells(u_cells, g, e_type, e_id):
     u_cells = np.unique(u_cells).astype(int)
-    print(u_cells.shape)
 
     # add cell2cell edge
     v_mask_cell = g.new_vp("bool")
