@@ -75,7 +75,7 @@ CircuitOps LPG generation and query example:
 
 ```
 cd CircuitOps
-../OpenROAD/build/src/openroad -python ./src/python/generate_tables.py -w
+../OpenROAD/build/src/openroad -python ./src/python/generate_tables.py
 cd ../
 ```
 
