@@ -79,9 +79,6 @@ make -j
 ```
 
 ## Running the Demo Scripts
-
-### Session 1
-
 The following script asssume that we work from the ASPDAC2024-Tutorial directory.
 Prior to testing the script please select the Tutorial directory.
 
@@ -89,8 +86,14 @@ Prior to testing the script please select the Tutorial directory.
 cd <Path to ASP-DAC-24-Tutorial Directoy>
 ```
 
-### Demo 1
-OpenROAD Python APIs EDA flow example:
+### Session 1
+
+This session demonstrates OpenROAD Python APIs in ML-EDA applications. The sesssion contains two demos:
+
+
+#### Demo 1
+
+The first demo shows the Python APIs to run EDA tools flow and APIs to query OpenROAD database. These APIs can work within a regular Python shell and easily integrate with ML-EDA applications. 
 
 ```
 ./OpenROAD/build/src/openroad -python session1/demo1_flow.py
@@ -102,27 +105,33 @@ OpenROAD Python APIs circuit properties query example:
 ./OpenROAD/build/src/openroad -python session1/demo1_query.py
 ```
 
-### Demo 2 
+#### Demo 2 
 
-Image-based static IR Drop prediction using OpenROAD Python APIs:
+The second demo shows the Python APIs used in two ML EDA applications. The first is for IR drop prediction. The script creates a power map within OpenROAD Python interpreter and perforamcce inference using U-Net model. The second shows the use of Python APIs with an RL gate sizing framework. The GNN takes an action to update the size of the netlist in the OpenROAD database and uses OpenROAD timer to estimate the reward. 
+
+
+To run the image-based static IR Drop prediction prediction using OpenROAD Python:
 
 ```
 ./OpenROAD/build/src/openroad -python session1/demo2_IR.py 
 ```
 
-RL-based sizing using OpenROAD Python APIs:
+To run the RL-based gate sizing example using OpenROAD Python:
 
 ```
 ./OpenROAD/build/src/openroad -python session1/demo2_gate_sizing.py 
 ```
 
-## Session 2
+### Session 2
 
-### Demo 3
+This session demonstrates CircuitOps datastrcutre which includes a labeled property graph (LPG) backed by intermedidate representation (IR) tables.
 
-CircuitOps LPG generation and query example:
 
-- IR Tables generation 
+#### Demo 3
+The first demo in this session highlights LPG creation and IR table generation using OpenROAD and it is followed by examples of using Python APIs for querying LPG. 
+
+
+IR Tables generation using OpenROAD: 
 
 ```
 cd CircuitOps
@@ -130,20 +139,25 @@ cd CircuitOps
 cd ../
 ```
 
-- LPG generation & query example:
-  - create LPG via IR Tables
-  ```
-  python3 session2/demo3_LPG_query_example.py 
-  ```
-  
-  - create LPG via OpenROAD Python API
-  ```
-  ./OpenROAD/build/src/openroad -python session2/demo3_LPG_query_example.py --use_pd
-  ``` 
+There are two ways to create LPGs:
 
-### Demo 4
+(1) Create LPG via IR Tables
 
-CircuitOps application example
+```
+python3 session2/demo3_LPG_query_example.py 
+```
+
+(2) Create LPG via OpenROAD Python API
+```
+./OpenROAD/build/src/openroad -python session2/demo3_LPG_query_example.py --use_pd
+``` 
+
+#### Demo 4
+
+The second demo in this session showcases an example of using CircuitOps data representation format for easy data generation for net delay prediction.
+
+To run this example:
+
 
 ```
 ./OpenROAD/build/src/openroad -python session2/demo4_preroute_net_delay_prediction.py
