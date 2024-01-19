@@ -48,7 +48,7 @@ docker run -it --name <container_name> <image_name>
 ##### Option 2: Build locally
 The following technique assumes you have a machine with the required Ubuntu OS prerequisite of OpenROAD an CircuitOps.
 
-Install dependendencies for OpenROAD:
+Install dependencies for OpenROAD:
 ```
 sudo ./OpenROAD/etc/DependencyInstaller.sh
 ```
@@ -68,7 +68,7 @@ pip3 install pandas
 pip3 install scikit-learn
 ```
 
-Once pacakges have been installed, build OpenROAD:
+Once packages have been installed, build OpenROAD:
 
 ```
 cd ./OpenROAD/
@@ -79,8 +79,8 @@ make -j
 ```
 
 ## Running the Demo Scripts
-The following script asssume that we work from the ASPDAC2024-Tutorial directory.
-Prior to testing the script please select the Tutorial directory.
+The following script assumes that we work from the ASPDAC2024-Tutorial directory.
+Before testing the script please select the tutorial directory.
 
 ```
 cd <Path to ASP-DAC-24-Tutorial Directoy>
@@ -88,12 +88,12 @@ cd <Path to ASP-DAC-24-Tutorial Directoy>
 
 ### Session 1
 
-This session demonstrates OpenROAD Python APIs in ML-EDA applications. The sesssion contains two demos:
+This session demonstrates OpenROAD Python APIs in ML-EDA applications. The session contains two demos:
 
 
 #### Demo 1
 
-The first demo shows the Python APIs to run EDA tools flow and APIs to query OpenROAD database. These APIs can work within a regular Python shell and easily integrate with ML-EDA applications. 
+The first demo shows the Python APIs to run EDA tools flow and APIs to query the OpenROAD database. These APIs can work within a regular Python shell and easily integrate with ML-EDA applications. 
 
 ```
 ./OpenROAD/build/src/openroad -python session1/demo1_flow.py
@@ -107,7 +107,7 @@ OpenROAD Python APIs circuit properties query example:
 
 #### Demo 2 
 
-The second demo shows the Python APIs used in two ML EDA applications. The first is for IR drop prediction. The script creates a power map within OpenROAD Python interpreter and perforamcce inference using U-Net model. The second shows the use of Python APIs with an RL gate sizing framework. The GNN takes an action to update the size of the netlist in the OpenROAD database and uses OpenROAD timer to estimate the reward. 
+The second demo shows the Python APIs used in two ML EDA applications. The first is for IR drop prediction. The script creates a power map within OpenROAD Python interpreter and performance inference using U-Net model. The second shows the use of Python APIs with an RL gate sizing framework. The GNN takes an action to update the size of the netlist in the OpenROAD database (OpenDB) and uses OpenROAD timer (OpenSTA) to estimate the reward. 
 
 
 To run the image-based static IR Drop prediction prediction using OpenROAD Python:
