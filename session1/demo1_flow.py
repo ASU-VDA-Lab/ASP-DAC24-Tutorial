@@ -113,6 +113,14 @@ cts.setRootBuffer("CLKBUF_X3")
 cts.setSinkBuffer("CLKBUF_X1")
 cts.runTritonCts()
 
+####################
+#Detailed Placement#
+####################
+site = design.getBlock().getRows()[0].getSite()
+max_disp_x = int(design.micronToDBU(0) / site.getWidth())
+max_disp_y = int(design.micronToDBU(0) / site.getHeight())
+design.getOpendp().detailedPlacement(max_disp_x, max_disp_y, "", False)
+
 ################
 #Global Routing#
 ################
@@ -128,4 +136,33 @@ grt.setMaxLayerForClock(clk_high_layer)
 grt.setAdjustment(0.5)
 grt.setVerbose(True)
 grt.globalRoute(True)
+
+##################
+#Detailed Routing#
+##################
+drter = design.getTritonRoute()
+params = drt.ParamStruct()
+params.outputMazeFile = ""
+params.outputDrcFile = ""
+params.outputCmapFile = ""
+params.outputGuideCoverageFile = ""
+params.dbProcessNode = ""
+params.enableViaGen = True
+params.drouteEndIter = 1
+params.viaInPinBottomLayer = ""
+params.viaInPinTopLayer = ""
+params.orSeed = -1
+params.orK = 0
+params.bottomRoutingLayer = "metal1"
+params.topRoutingLayer = "metal8"
+params.verbose = 1
+params.cleanPatches = True
+params.doPa = True
+params.singleStepDR = False
+params.minAccessPoints = 1
+params.saveGuideUpdates = False
+drter.setParams(params)
+drter.main()
+
+design.writeDef("tmp.def")
 

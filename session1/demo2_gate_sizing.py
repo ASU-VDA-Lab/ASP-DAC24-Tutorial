@@ -132,7 +132,7 @@ G.ndata['load'] = G.ndata['load']/norm_data['max_load']
 
 
 inital_total_area = torch.sum(G.ndata['area'])*norm_data['max_area']/(unit_micron*unit_micron)
-print("Initial total area: {inital_total_area:.4f}")
+print(f"Initial total area: {inital_total_area:.4f}")
 #print(device)
 G = G.to(device)
 
