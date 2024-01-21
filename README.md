@@ -23,12 +23,16 @@ This tutorial is composed of two hands-on sessions, each with two demos:
 
 ### Live at ASP-DAC 24
 
-If attending the 2024 ASP-DAC tutorial live and have emailed your public ssh key to us for Google Cloud Computing resources, you would have received an email on how to login, please login using the instructions. We have already cloned the repoository in your user directory and installed the required software dependencies and built the OpenROAD application. You can directly jump to the running the scripts as described in session 1 and sesion 2. 
+If attending the 2024 ASP-DAC tutorial live and have [emailed your public SSH key to us](https://docs.google.com/document/d/1A7b6MnxS6XStynawLfRyoY11c-tOs1DDtpU8_cU7wjI/edit?usp=sharing) for Google Cloud Computing resources, you will have received an email with a user-name and IP address please login from a Linux/MacOS terminal or Window CMD using the following command:
+```
+ssh -Y <user-name>@<ip-address> 
+```
+We have already cloned the repository in your user directory, and installed the required software dependencies and built the OpenROAD application. You can directly jump to running the scripts as described in session 1 and session 2. 
 
 
 ### Everywhere else (Not attending the ASP-DAC tutorial)
 
-If you are not attending the tutorial, you require clone this repository, install the required software dependencies, and build OpenROAD and CircuitOps.
+If you are not attending the tutorial, you required to clone this repository, install the required software dependencies, and build OpenROAD and CircuitOps.
 
 #### Clone the repository
 
@@ -46,7 +50,7 @@ docker run -it --name <container_name> <image_name>
 ```
 
 ##### Option 2: Build locally
-The following technique assumes you have a machine with the required Ubuntu OS prerequisite of OpenROAD an CircuitOps.
+The following technique assumes you have a machine with the required Ubuntu OS prerequisite of OpenROAD and CircuitOps.
 
 Install dependencies for OpenROAD:
 ```
@@ -124,7 +128,7 @@ To run the RL-based gate sizing example using OpenROAD Python:
 
 ### Session 2
 
-This session demonstrates CircuitOps datastrcutre which includes a labeled property graph (LPG) backed by intermedidate representation (IR) tables.
+This session demonstrates CircuitOps data structure which is an Intermediate Representation (IR) and includes labeled property graph (LPG) backed by relational tables.
 
 
 #### Demo 3
