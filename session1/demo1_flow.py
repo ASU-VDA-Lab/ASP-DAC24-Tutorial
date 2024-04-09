@@ -74,7 +74,7 @@ if VSS_net is None:
   VSS_net = odb.dbNet_create(design.getBlock(), "VSS")
 VSS_net.setSpecial()
 VSS_net.setSigType("GROUND")
-design.getBlock().addGlobalConnect(None, ".*", "VDD", VSS_net, True)
+design.getBlock().addGlobalConnect(None, ".*", "VSS", VSS_net, True)
 
 design.getBlock().globalConnect()
 
