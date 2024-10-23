@@ -1,6 +1,6 @@
 
 # OpenROAD Python API Tutorial
-This page shows example acriptting of OpenROAD Python APIs.
+This page shows example scripting of OpenROAD Python APIs.
 # Building OpenROAD Binary
 Clone OpenROAD
 ```
