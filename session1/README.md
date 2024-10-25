@@ -26,101 +26,312 @@ make -j
 
 ```
 ## Using OpenROAD in a Python Shell
-Import OpenROAD into Python env
+### Import OpenROAD into Python env
 ```
 import openroad
 ```
-Read EDA Files using OpenROAD Python API
+### Read Cell Library Files using OpenROAD Python API
 ```
-import openroad as ord
 from openroad import Tech, Design, Timing
-from pathlib import Path
 
 # Must declare a Tech Object
 tech = Tech()
 
-libDir = Path("libDir")
-lefDir = Path("lefDir")
-techDir = Path("techDir")
-
-libFiles = libDir.glob('*.lib')
-lefFiles = lefDir.glob('*.lef')
-techFiles = techDir.glob("tech.lefFile")
-
-# Reading lib, lef and tech Files
-for libFile in libFiles:
-  tech.readLiberty(libFile.as_posix())
-for techFile in techFiles:
-  tech.readLef(techFile.as_posix())
-for lefFile in lefFiles:
-  tech.readLef(lefFile.as_posix())
+tech.readLiberty("libFile")
+tech.readLef("lefFile")
 
 # Must follow the hierarchy
 design = Design(tech)
 timing = Timing(design)
+```
+### Read Verilog File using OpenROAD Python API
+```
+from openroad import Tech, Design, Timing
 
-# You Can Only Pick Either a Verilog File Or a DEF File
-# If Reading Verilog File
-verilogFile = "verilogFile.v"
-designName  = "designName"
-design.readVerilog(verilogFile)
+tech = Tech()
+design = Design(tech)
+design.readVerilog("verilogFile.v")
 # Link the Top Module
-design.link(designName)
+design.link("topModuleName")
+```
+### Read DEF File using OpenROAD Python API
+```
+from openroad import Tech, Design, Timing
 
-# If Reading DEF File
-defFile = "defFile.def"
-design.readDef(defFile)
+tech = Tech()
+design = Design(tech)
+design.readDef("defFile.def")
+```
+### Read SDC File using OpenROAD Python API
+```
+from openroad import Tech, Design, Timing
 
-# Read SDC File
+tech = Tech()
+design = Design(tech)
 sdcFile = "sdcFile.sdc"
 design.evalTclString("read_sdc %s"%sdcFile)
 ```
-Write files
+### Write files
 ```
+# Write DEF
 design.writeDef("final.def")
+
+# Write Gate-level Verilog file
 design.evalTclString("write_verilog %s.v"%"designName")
+
+# Write OpenDB file
 design.evalTclString("write_db .%s.odb"%"designName")
 ```
-## Other necessary steps
-Set Unit RC Value of Layers
+## Query information from OpenDB
+### Query library cell information
 ```
-design.evalTclString("set_layer_rc -layer M1 -resistance 1.3889e-01 -capacitance 1.1368e-01")
-# M2 and the rest of the layers can follow the same method
-```
-Connect VDD/VSS pins to nets
-```
-import odb
+import openroad as ord
 
-# Find the VDD net
-VDDNet = design.getBlock().findNet("VDD")
-# Create VDD net if it does not exist
-if VDDNet is None:
-  VDDNet = odb.dbNet_create(design.getBlock(), "VDD")
-# Raise the special flag of the VDD net
-VDDNet.setSpecial()
-# Assign the "VDD" net to the "POWER" type
-VDDNet.setSigType("POWER")
-# Find the VSS net
-VSSNet = design.getBlock().findNet("VSS")
-# Create VSS net if it does not exist
-if VSSNet is None:
-  VSSNet = odb.dbNet_create(design.getBlock(), "VSS")
-# Raise the special flag of the VSS net
-VSSNet.setSpecial()
-# Assign the "VSS" net to the "GROUND" type
-VSSNet.setSigType("GROUND")
-# Connect the pins to the nets
-design.getBlock().addGlobalConnect(None, ".*", "VDD", VDDNet, True)
-design.getBlock().addGlobalConnect(None, ".*", "VSS", VSSNet, True)
-# Establish global connect
-design.getBlock().globalConnect()
+# Get OpenDB
+db = ord.get_db()
+
+# Get all cell libraries from different files (if multiple .lib files are read)
+libs = db.getLibs()
+
+for lib in libs:
+  # Get library name
+  lib_name = lib.getName()
+
+  # Get all library cells in that library
+  lib_masters = lib.getMasters()  
+  for master in lib_masters:
+    # Get the name of the library cell
+    libcell_name = master.getName()
+
+    # Get the area of it by getting the product of its height and width
+    libcell_area = master.getHeight() * master.getWidth()
 ```
-Set the clock signal
+### Query cell information
+Get all cells in the design
 ```
-# Create clock signal
-design.evalTclString("create_clock -period "period in ps" [get_ports "portName"] -name "clockName"")
-# Propagate the clock signal
-design.evalTclString("set_propagated_clock [all_clocks]")
+from openroad import Tech, Design
+
+tech = Tech()
+# Assume all files are read
+design = Design(tech)
+# Assume all files are read
+
+# Get the design
+block = design.getBlock()
+
+# Get a list of cells in the design
+insts = block.getInsts()
+inst = insts[0]
+```
+dBInst.getName()
+```
+# Get cell name
+cell_name = inst.getName()
+```
+Instance location
+```
+BBox = inst.getBBox()
+x0 = BBox.xMin()
+y0 = BBox.yMin()
+x1 = BBox.xMax()
+y1 = BBox.yMax()
+```
+dBInst.getMaster()
+```
+# Get the master cell of the instance (library cell)
+masterCell = inst.getMaster()
+```
+Design.isSequential()
+```
+# Return True if it's a flipflop
+isSeq = design.isSequential(masterCell)
+```
+dBMaster.isBlock()
+```
+# Return True if it's a macro
+isMacro = masterCell.isBlock()
+```
+dBMaster.isFiller()
+```
+# Return True if it's a filler cell
+isFiller = masterCell.isFiller()
+```
+Design.isBuffer()
+```
+# Return True if it's a buffer
+isBuffer = design.isBuffer(masterCell)
+```
+Design.isInverter()
+```
+# Return True if it's an inverter
+isInv = design.isInverter(masterCell)
+```
+Design.isInClock()
+```
+# Return True if it's in a clock net
+isInClk = design.isInClock(inst)
+```
+Timing.staticPower()
+```
+# Get the available design corner (change the index to use different corners)
+corner = timing.getCorners()[0]
+# Get the static power of a cell
+cellStaticPower = timing.staticPower(inst, corner)
+```
+Timing.dynamicPower()
+```
+# Get the available design corner (change the index to use different corners)
+corner = timing.getCorners()[0]
+# Get the dynamic power of a cell
+cellDynamicPower = timing.dynamicPower(inst, corner)
+```
+dBInst.getITerms()
+```
+# Get all pins of the cell
+ITerms = inst.getITerms()
+```
+### Query net information
+Get all nets in the design in a list
+```
+# Get the design block
+block = design.getBlock()
+# Get all nets in a list in the design
+nets = block.getNets()
+net = nets[0]
+```
+dBNet.getSigType()
+```
+# Return "POWER" if the net is a power (VDD) net. Return "GROUND" is the net is a ground (VSS) net.
+sigType = net.getSigType()
+```
+dBNet.getName()
+```
+# Get the name of the net
+net_name = net.getName()
+```
+dBNet.getITerms()
+```
+# Get all the pins connected to this net
+net_ITerms = net.getITerms()
+```
+dBNet.getTotalCapacitance()
+```
+# Get the total wire capacitance of the net
+net_cap = net.getTotalCapacitance()
+```
+dBNet.getTotalResistance()
+```
+# Get the total wire resistance of the net
+net_res = net.getTotalResistance()
+```
+dBNet.getTotalCouplingCap()
+```
+# Get the total wire coupling capacitance of the net
+net_coupling = net.getTotalCouplingCap()
+```
+Timing.getNetCap()
+```
+# Get the available design corner (change the index to use different corners)
+corner = timing.getCorners()[0]
+# Get the pin capacitance + wire capacitance of the net
+total_cap = timing.getNetCap(net, corner, timing.Max)
+```
+dbITerm.isInputSignal()
+```
+# Get the number of fanout of the net
+outputPins = []
+net_ITerms = net.getITerms()
+  for ITerm in net_ITerms:
+    if (ITerm.isInputSignal()):
+      outputPins.append(ITerm)
+fanOut = len(outputPins)
+```
+Design.getNetRoutedLength()
+```
+# Get the length of the net
+netRouteLength = design.getNetRoutedLength(net)
+```
+### Query pin information
+Get all pins in the design in a list
+```
+block = design.getBlock()
+# Get all pins in the design
+ITerms = block.getITerms()
+ITerm = ITerms[0]
+```
+Design.getITermName()
+```
+# Get the pin name
+pinName = design.getITermName(ITerm)
+```
+dBITerm.getNet()
+```
+# The net connects to this pin
+net = ITerm.getNet()
+```
+dBITerm.getInst()
+```
+# Get the cell that this pin belongs to
+cell = ITerm.getInst()
+```
+dBITerm.isOutputSignal()
+```
+# Return True if the pin is an output pin of the cell
+outputPin = ITerm.isOutputSignal()
+```
+dBITerm.isInputSignal()
+```
+# Return True if the pin is an input pin of the cell
+inputPin = ITerm.isInputSignal()
+```
+dBITerm.getAvgXY()
+```
+# Get the x and y location of the pin
+PinXY_list = ITerm.getAvgXY()
+if PinXY_list[0]:
+  x = PinXY_list[1]
+  y = PinXY_list[2]
+```
+Timing.isEndpoint()
+```
+# Return True if the pin is a sink pin of any timing path
+is_endpoint = timing.isEndpoint(ITerm)
+```
+Timing.getPinSlew()
+```
+# Get the slew of the pin
+pinSlew = timing.getPinSlew(ITerm)
+```
+Timing.getPinSlack()
+```
+# Get the falling slack of the pin
+pinFallSlack = timing.getPinSlack(ITerm, timing.Fall, timing.Max)
+# Get the rising slack of the pin
+pinRiseSlack = timing.getPinSlack(ITerm, timing.Rise, timing.Max)
+```
+Timing.getPinArrival()
+```
+# Get the rising arrival time of the pin
+pinRiseArr = timing.getPinArrival(ITerm, timing.Rise)
+# Get the falling arrival time of the pin
+pinFallArr = timing.getPinArrival(ITerm, timing.Fall)
+```
+Timing.getMaxCapLimit()
+```
+# Get the max permitted load capacitance limit of the pin
+maxCap = timing.getMaxCapLimit(library_cell_pin)
+```
+Timing.getMaxSlewLimit()
+```
+# Get the max permitted slew of the pin
+maxSlew = timing.getMaxSlewLimit(library_cell_pin)
+```
+dBITerm.isInputSignal()
+Timing.getPortCap()
+```
+# Get the input capacitance of a pin if it is an input pin of a cell
+if ITerm.isInputSignal():
+  inputPinCap = timing.getPortCap(ITerm, corner, timing.Max)
 ```
 ## Using OpenROAD Python APIs to Perform Physical Design Steps
 Floorplan using utilization rate
@@ -441,138 +652,49 @@ equivCells = timing.equivCells(instMaster)
 # Perform gate sizing with randomly select an available equivalent cell 
 inst.swapMaster(equivCells[0])
 ```
-## Query information from OpenDB
-Query library cell information
+## Other necessary steps
+Set Unit RC Value of Layers
 ```
-import openroad as ord
+design.evalTclString("set_layer_rc -layer M1 -resistance 1.3889e-01 -capacitance 1.1368e-01")
+# M2 and the rest of the layers can follow the same method
+```
+Connect VDD/VSS pins to nets
+```
+import odb
 
-# Get OpenDB
-db = ord.get_db()
-# Get all cell libraries from different files read
-libs = db.getLibs()
-for lib in libs:
-  # Get library name
-    lib_name = lib.getName()
-    # Get all library cells in that library
-    lib_masters = lib.getMasters()
-    for master in lib_masters:
-    # Get the name of the library cell
-      libcell_name = master.getName()
-      # Get the area of it by getting the product of its height and width
-      libcell_area = master.getHeight() * master.getWidth()
+# Find the VDD net
+VDDNet = design.getBlock().findNet("VDD")
+# Create VDD net if it does not exist
+if VDDNet is None:
+  VDDNet = odb.dbNet_create(design.getBlock(), "VDD")
+# Raise the special flag of the VDD net
+VDDNet.setSpecial()
+# Assign the "VDD" net to the "POWER" type
+VDDNet.setSigType("POWER")
+# Find the VSS net
+VSSNet = design.getBlock().findNet("VSS")
+# Create VSS net if it does not exist
+if VSSNet is None:
+  VSSNet = odb.dbNet_create(design.getBlock(), "VSS")
+# Raise the special flag of the VSS net
+VSSNet.setSpecial()
+# Assign the "VSS" net to the "GROUND" type
+VSSNet.setSigType("GROUND")
+# Connect the pins to the nets
+design.getBlock().addGlobalConnect(None, ".*", "VDD", VDDNet, True)
+design.getBlock().addGlobalConnect(None, ".*", "VSS", VSSNet, True)
+# Establish global connect
+design.getBlock().globalConnect()
 ```
-Query cell information
+Set the clock signal
 ```
-block = design.getBlock()
-# Get all cells in the design
-insts = block.getInsts()
-# Get the available design corner (change the index to use different corners)
-corner = timing.getCorners()[0]
-
-for inst in insts:
-  # Get cell name
-  cell_name = inst.getName()
-  #location
-  BBox = inst.getBBox()
-  x0 = BBox.xMin()
-  y0 = BBox.yMin()
-  x1 = BBox.xMax()
-  y1 = BBox.yMax()
-
-  masterCell = inst.getMaster()
-  # Return True if it's a flipflop
-  isSeq = design.isSequential(masterCell)
-  # Return True if it's a macro
-  isMacro = masterCell.isBlock()
-  # Return True if it's a filler cell
-  isFiller = masterCell.isFiller()
-  # Return True if it's a buffer
-  isBuffer = design.isBuffer(masterCell)
-  # Return True if it's an inverter
-  isInv = design.isInverter(masterCell)
-  # Return True if it's in a clock net
-  isInClk = design.isInClock(inst)
-  # Get the static power of a cell
-  cellStaticPower = timing.staticPower(inst, corner)
-  # Get the dynamic power of a cell
-  cellDynamicPower = timing.dynamicPower(inst, corner)
-  # Get all pins of the cell
-  ITerms = inst.getITerms()
-```
-Query net information
-```
-block = design.getBlock()
-# Get all nets in the design
-nets = block.getNets()
-# Get the available design corner (change the index to use different corners)
-corner = timing.getCorners()[0]
-for net in nets:
-  # Return "POWER" if the net is a power (VDD) net. Return "GROUND" is the net is a ground (VSS) net.
-  sigType = net.getSigType()
-  # Get the name of the net
-  net_name = net.getName()
-  # Get all the pins connected to this net
-  net_ITerms = net.getITerms()
-  # Get the total wire capacitance of the net
-  net_cap = net.getTotalCapacitance()
-  # Get the total wire resistance of the net
-  net_res = net.getTotalResistance()
-  # Get the total wire coupling capacitance of the net
-  net_coupling = net.getTotalCouplingCap()
-  # Get the pin capacitance + wire capacitance of the net
-  total_cap = timing.getNetCap(net, corner, timing.Max)
-  # Get the number of fanout of the net
-  outputPins = []
-  net_ITerms = net.getITerms()
-    for ITerm in net_ITerms:
-      if (ITerm.isInputSignal()):
-        outputPins.append(ITerm)
-  fanOut = len(outputPins)
-  # Get the length of the net
-  netRouteLength = design.getNetRoutedLength(net)
-```
-Query pin information
-```
-block = design.getBlock()
-# Get all pins in the design
-ITerms = block.getITerms()
-for ITerm in ITerms:
-  # Get the pin name
-  pinName = design.getITermName(ITerm)
-  # The net connects to this pin
-  net = ITerm.getNet()
-  # Get the cell that this pin belongs to
-  cell = ITerm.getInst()
-  # Return True if the pin is an output pin of the cell
-  outputPin = ITerm.isOutputSignal()
-  # Return True if the pin is an input pin of the cell
-  inputPin = ITerm.isInputSignal()
-  # Get the x and y location of the pin
-  PinXY_list = ITerm.getAvgXY()
-  if PinXY_list[0]:
-    x = PinXY_list[1]
-    y = PinXY_list[2]
-  # Return True if the pin is a sink pin of any timing path
-  is_endpoint = timing.isEndpoint(ITerm)
-  # Get the slew of the pin
-  pinSlew = timing.getPinSlew(ITerm)
-  # Get the falling slack of the pin
-  pinFallSlack = timing.getPinSlack(ITerm, timing.Fall, timing.Max)
-  # Get the rising slack of the pin
-  pinRiseSlack = timing.getPinSlack(ITerm, timing.Rise, timing.Max)
-  # Get the rising arrival time of the pin
-  pinRiseArr = timing.getPinArrival(ITerm, timing.Rise)
-  # Get the falling arrival time of the pin
-  pinFallArr = timing.getPinArrival(ITerm, timing.Fall)
-  # Get the max permitted load capacitance limit of the pin
-  maxCap = timing.getMaxCapLimit(library_cell_pin)
-  # Get the max permitted slew of the pin
-  maxSlew = timing.getMaxSlewLimit(library_cell_pin)
-  # Get the input capacitance of a pin if it is an input pin of a cell
-  if ITerm.isInputSignal():
-    inputPinCap = timing.getPortCap(ITerm, corner, timing.Max)
+# Create clock signal
+design.evalTclString("create_clock -period "period in ps" [get_ports "portName"] -name "clockName"")
+# Propagate the clock signal
+design.evalTclString("set_propagated_clock [all_clocks]")
 ```
  
+
 
 
 
