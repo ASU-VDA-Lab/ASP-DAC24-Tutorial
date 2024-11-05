@@ -163,6 +163,14 @@ The second demo in this session showcases an example of using CircuitOps data re
 To run this example:
 
 
+## Cite this work
+```
+\bibitem{aspdactutorialpaper}
+V. A. Chhabria, W. Jiang, A. B. Kahng, R. Liang, H. Ren, S. S. Sapatnekar and B.-Y. Wu,
+``OpenROAD and CircuitOps: Infrastructure for ML EDA Research and Education'', {\em Proc. VTS}, 2024, pp. 1-4.
+```
+
+
 ```
 ./OpenROAD/build/src/openroad -python session2/demo4_preroute_net_delay_prediction.py
 ```
