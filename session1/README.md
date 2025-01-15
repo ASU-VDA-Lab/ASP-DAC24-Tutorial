@@ -15,7 +15,7 @@ cmake ..
 make -j
 ```
 
-# Running Openroad in Python env
+# Running OpenROAD in Python Evironment
 ## Execute a Simple Script
 ```
 ./<openroadBinary> -python <fileNmae>.py
